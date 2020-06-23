@@ -1,5 +1,5 @@
 # CWT
-** Spike detection using continuous wavelet transform utilising data-driven custom wavelet templates **
+**Spike detection using continuous wavelet transform utilising data-driven custom wavelet templates**
 
 This method is an extension of the method presented in:
 
