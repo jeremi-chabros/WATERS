@@ -1,5 +1,5 @@
 # CWT
-Spike detection using continuous wavelet transform utilising data-driven custom wavelet templates
+> Spike detection using continuous wavelet transform utilising data-driven custom wavelet templates
 
 This method is an extension of the method presented in:
 Nenadic Z, Burdick JW. 
@@ -7,7 +7,7 @@ Spike detection using the continuous wavelet transform.
 IEEE Trans Biomed Eng. 2005;52(1):74-87. 
 doi:10.1109/TBME.2004.839800
 
-Through adapting custom wavelets adaped from spike waveforms, it creates a family of templates that are scaled
+Through adapting custom wavelets adaped from spike waveforms, it creates a family of templates that are then scaled
 - horizontally in time domain
 - vertically in voltage (amplitude) domain
 Allowing for a more robust spike detection that accounts for physiological and morphological neuronal properties
@@ -26,5 +26,5 @@ Spike detection pipeline:
 4. Using built-in templates, repeat 3.
 5. Spike merging by peaks (+/- 5 frames = 0.2 ms) - different wavelets have a different zero-crossing point
    5a. TODO: include a weighting function and an optimal set of templates
-6.
+6. TODO: spike sorting.
 
