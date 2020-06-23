@@ -3,10 +3,13 @@
 
 This method is an extension of the method presented in:
 
-Nenadic Z, Burdick JW. 
+> Nenadic Z, Burdick JW. 
+
 > Spike detection using the continuous wavelet transform. 
+
 > IEEE Trans Biomed Eng. 2005;52(1):74-87. 
-> doi:10.1109/TBME.2004.839800
+
+> doi:10.1109/TBME.2004.839800 \n
 
 Through adapting custom wavelets adaped from spike waveforms, it creates a family of templates that are then scaled
 - horizontally in time domain
