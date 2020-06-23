@@ -2,6 +2,7 @@
 > Spike detection using continuous wavelet transform utilising data-driven custom wavelet templates
 
 This method is an extension of the method presented in:
+
 Nenadic Z, Burdick JW. 
 Spike detection using the continuous wavelet transform. 
 IEEE Trans Biomed Eng. 2005;52(1):74-87. 
