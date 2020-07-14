@@ -3,7 +3,9 @@ function [spikeFrames, filteredData, threshold] = detectFramesCWT(data, fs, Wid,
 refPeriod_ms = 1;
 method = 'Manuel';
 
-% Filter signal
+%%  Filter signal
+
+% %    2-D
 lowpass = 600;
 highpass = 8000;
 wn = [lowpass highpass] / (fs / 2);
@@ -12,6 +14,11 @@ filterOrder = 3;
 filteredData = filtfilt(b, a, double(data));
 
 data = filteredData;
+
+threshold = (mad(filteredData)/0.6745);
+minThreshold = -threshold*3;
+peakThreshold = -threshold*15;
+posThreshold = threshold*5;
 
 if strcmp(wname, 'mea') && ~ttx
     
@@ -29,23 +36,36 @@ if strcmp(wname, 'mea') && ~ttx
 end
 
 try
+    sFr = [];
     spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
     
-    window = 10;
-    for  i = 1:length(spikeFrames)
+    window = 10;    % Frames; ms = window/25
+    
+    for i = 1:length(spikeFrames)
         if spikeFrames(i)+window < length(data)
-            sFr(i) = find(data == min(data(spikeFrames(i)-window:spikeFrames(i)+window)));
+            bin = data(spikeFrames(i)-window:spikeFrames(i)+window);
+            peak = min(bin);
+            pos = find(bin == peak);
+            
+            if peak > peakThreshold && peak < minThreshold
+            sFr = [sFr (spikeFrames(i)+pos-window)];
+            end
+            
         else
-            sFr(i) = find(data == min(data(spikeFrames(i)-window:end)));
+            bin = data(spikeFrames(i)-window:end);
+            peak = min(bin);
+            pos = find(bin == peak);
+            
+            if peak > peakThreshold && peak < minThreshold
+                sFr = [sFr (spikeFrames(i)+pos)];
+            end
+            
         end
     end
-    
     spikeFrames = sFr;
     
 catch
     disp(['Failed to detect spikes']);
 end
-
-threshold = multiplier*std(data);
-
+threshold = multiplier*threshold;
 end
