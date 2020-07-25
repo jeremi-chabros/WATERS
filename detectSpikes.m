@@ -155,8 +155,10 @@ end
 % the numbers seem quite arbitrary to me...
 if strcmp(method,'Manuel')
     % butterworth filter
+    
     lowpass = 600;
     highpass = 8000;
+    
     wn = [lowpass highpass] / (fs / 2);
     filterOrder = 3;
     [b, a] = butter(filterOrder, wn);
@@ -164,17 +166,16 @@ if strcmp(method,'Manuel')
     
     % finding threshold and spikes
     m = mean(filteredData);
-    s = std(filteredData);
-    % multiplier = 5;
+%   s = std(filteredData);
+%   multiplier = 5;
+    s = (mad(filteredData, 1)/0.6745);
+
     threshold = m - multiplier*s;
     % negThreshold = m - 8 * s; % maximum threshold, a simple artefact removal method
     spikeTrain = filteredData < threshold;
     
-    
-    
-    
     % impose refractory period
-    refPeriod = 2.0 * 10^-3 * fs; % 2ms
+    refPeriod = 1.0 * 10^-3 * fs; % 2ms
     % I think there is a more efficient/elegant way to do this, but I haven't
     % taken time to think about it yet
     spikeTrain = double(spikeTrain);
@@ -191,6 +192,35 @@ if strcmp(method,'Manuel')
             end
         end
     end
+    
+%     % Spike alignment to -ve peak
+%     win = 10;
+%     thr = multiplier*s;
+%     minThreshold = -thr*3;
+%     peakThreshold = -thr*15;
+%     posThreshold = thr*5;
+%     
+%     spikeFrames = find(spikeTrain == 1);
+%     sFr = [];
+%     for i = 1:length(spikeFrames)
+%         
+%         if spikeFrames(i)+win < length(data) && spikeFrames(i)-win >= 1
+%             bin = filteredData(spikeFrames(i)-win:spikeFrames(i)+win);
+%             peak = min(bin);
+%             pos = find(bin == peak);
+%             sFr = [sFr (spikeFrames(i)+pos-win)];
+%             
+%         else spikeFrames(i)-win >= 1
+%             bin = filteredData(spikeFrames(i)-win:end);
+%             peak = min(bin);
+%             pos = find(bin == peak);
+%             sFr = [sFr (spikeFrames(i)+pos)];
+%         end
+%     end
+%     
+%     spikeTrain = zeros(size(filteredData));
+%     spikeTrain(sFr) = 1;
+
 end
 
 %%  Z. Nenadic and J.W. Burdick 2005

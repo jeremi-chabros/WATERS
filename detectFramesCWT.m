@@ -15,10 +15,10 @@ filteredData = filtfilt(b, a, double(data));
 
 data = filteredData;
 
-threshold = (mad(filteredData)/0.6745);
-minThreshold = -threshold*3;
+threshold = mad(filteredData)/0.6745;
+minThreshold = -threshold*2;
 peakThreshold = -threshold*15;
-posThreshold = threshold*5;
+posThreshold = threshold*3;
 
 if strcmp(wname, 'mea') && ~ttx
     
@@ -36,28 +36,45 @@ if strcmp(wname, 'mea') && ~ttx
 end
 
 try
-    sFr = [];
-    spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
     
-    window = 10;    % Frames; ms = window/25
+    sFr = [];
+    spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
+    
+    win = 10;    % Frames; ms = window/25
     
     for i = 1:length(spikeFrames)
-        if spikeFrames(i)+window < length(data)
-            bin = data(spikeFrames(i)-window:spikeFrames(i)+window);
-            peak = min(bin);
-            pos = find(bin == peak);
+        if spikeFrames(i)+win < length(data)
             
-            if peak > peakThreshold && peak < minThreshold
-            sFr = [sFr (spikeFrames(i)+pos-window)];
-            end
+            bin = filteredData(spikeFrames(i)-win:spikeFrames(i)+win);
+            negativePeak = min(bin);
+
+            posPeaks = findpeaks(bin);
+            positivePeak = max(posPeaks);
+            crossings = posPeaks > 2*threshold;
+            
+            pos = find(bin == negativePeak);
+
+                if negativePeak > peakThreshold && negativePeak < minThreshold
+                    if max(bin) < posThreshold
+                    sFr = [sFr (spikeFrames(i)+pos-win)];
+                    end
+                end
+
             
         else
-            bin = data(spikeFrames(i)-window:end);
-            peak = min(bin);
-            pos = find(bin == peak);
+            bin = filteredData(spikeFrames(i)-win:end);
+            negPeaks = findpeaks(-bin);
+            negativePeak = -max(negPeaks);
             
-            if peak > peakThreshold && peak < minThreshold
-                sFr = [sFr (spikeFrames(i)+pos)];
+            thresholdCrossings = find(-negPeaks < minThreshold);
+            
+            posPeaks = findpeaks(bin);
+            positivePeak = max(posPeaks);
+            
+            pos = find(bin == negativePeak);
+            
+            if negativePeak > peakThreshold && negativePeak < minThreshold
+                sFr = [sFr (spikeFrames(i)+pos-win)];
             end
             
         end

@@ -2,33 +2,23 @@ function [newWaveletIntegral, newWaveletSqN] = customWavelet(ave_trace)
 
 template = ave_trace;
 
-% Pre-allocate
-signal = zeros(1, 100);
+% Interpolation
+template = spline(1:length(template), template, linspace(1, length(template), 100));
 
-% Rescale horizontally by a factor of 2
-rsF = 2;
-for i = 1:length(signal)+1
-    if rem(i, rsF) == 0
-        signal(1, i) = template(1, i/2);
-        signal(1, i-1) = signal(1, i);
-        signal(1, i) = 0;
-    end
-end
-
-signalCentered = signal;
-
-%   Gaussian smoothing
+% Gaussian smoothing
 w = gausswin(8);
-y = filter(w,1,signalCentered);
+y = filter(w,1,template);
 y = rescale(y);
 y = y - mean(y);
 
-%   Linear interp for expanding the number of samples and smoothing
-xq = linspace(1, length(signalCentered), 1000);
-x = 1:length(signalCentered);
-vq1 = interp1(x,y,xq);
+% Pre-allocate
+signal = zeros(1, 250);
 
-[Y,X,nc] = pat2cwav(vq1, 'orthconst', 0, 'none') ;
+% Center the template
+signal(76:175) = y;
+
+% Adapt the wavelet
+[Y,X,nc] = pat2cwav(y, 'orthconst', 0, 'none') ;
 
 %   Test if a legitmate wavelet
 dxval = max(diff(X));

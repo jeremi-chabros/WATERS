@@ -27,7 +27,9 @@ for i = 1:n_spikes_to_plot
 end
 
 try
-    ave_trace = (sum(all_trace'))/(length(all_trace(1,:)));
+    for i = 1:size(all_trace, 1)
+    ave_trace(i) = median(all_trace(i,:));
+    end
 catch
     disp('Problem with ave trace');
 end
