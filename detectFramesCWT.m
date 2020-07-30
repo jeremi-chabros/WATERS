@@ -1,7 +1,37 @@
-function [spikeFrames, filteredData, threshold] = detectFramesCWT(data, fs, Wid, wname, L, Ns, multiplier, n_spikes, ttx)
+function [spikeFrames, filteredData, threshold] = detectFramesCWT(...
+         data, fs, Wid, wname, L, Ns, multiplier, n_spikes, ttx)
+% Input:
+%   data - 1 x n extracellular potential data to be analyzed
+%
+%   fs - sampling frequency [Hz]
+%
+%   Wid - 1 x 2 vector of expected minimum and maximum width [ms] of 
+%         transient to be detected Wid=[Wmin Wmax]
+%         For most practical purposes Wid=[0.5 1.0]
+%
+%   wname - (string): the name of wavelet family in use
+%       'bior1.5' - biorthogonal
+%       'bior1.3' - biorthogonal
+%       'db2'     - Daubechies
+%       'mea'     - custom wavelet (https://github.com/jeremi-chabros/CWT)
+%
+%       Note: sym2 and db2 differ only by sign --> they produce the same
+%       result
+%
+%	L - the factor that multiplies [cost of comission]/[cost of omission].
+%       For most practical purposes -0.2 <= L <= 0.2. Larger L --> omissions
+%       likely, smaller L --> false positives likely. 
+%       For unsupervised detection, the suggested value of L is close to 0
+%
+%   Ns - (scalar): the number of scales to use in detection (Ns >= 2)
+%
+%   multiplier - the threshold multiplier used for detection
+%
+%   n_spikes - the number of spikes used to adapt a custom wavelet
+%
+%   ttx - flag for the recordings with TTX added: 1 = TTX, 0 = control
 
 refPeriod_ms = 1;
-method = 'Manuel';
 
 %  Filter signal
 lowpass = 600;
@@ -25,7 +55,7 @@ if strcmp(wname, 'mea') && ~ttx
     %   Use threshold-based spike detection to obtain the median waveform
     %   from n_spikes
     try
-        ave_trace = getTemplate(data, method, multiplier, L, refPeriod_ms, n_spikes);
+        ave_trace = getTemplate(data, multiplier, refPeriod_ms, n_spikes);
     catch
         disp(['Failed to obtain mean waveform']);
     end

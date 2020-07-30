@@ -1,14 +1,14 @@
-function ave_trace = getTemplate(data, method, multiplier, L, refPeriod_ms, n_spikes_to_plot)
+function ave_trace = getTemplate(data, multiplier, refPeriod_ms, n_spikes_to_plot)
 
-[spikeTrain, finalData, threshold] = detectSpikes(data, method, multiplier, L, refPeriod_ms);
+[spikeTrain, finalData, threshold] = detectSpikes(data, multiplier, refPeriod_ms);
 
 sp_times = find(spikeTrain == 1);
 
 if  sum(spikeTrain) < n_spikes_to_plot
     
-    %         If fewer spikes than specified - use the maximum possible number
+    % If fewer spikes than specified - use the maximum possible number
     n_spikes_to_plot = sum(spikeTrain);
-    disp('Not enough spikes defected with specified threshold, using ',num2str(n_spikes_to_plot),'instead');
+    disp('Not enough spikes detected with specified threshold, using ',num2str(n_spikes_to_plot),'instead');
 end
 
 for i = 1:n_spikes_to_plot

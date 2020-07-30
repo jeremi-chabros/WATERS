@@ -43,3 +43,15 @@ for i = 1:length(spikeTrain)
         end
     end
 end
+
+
+
+
+
+
+
+
+
+
+
+

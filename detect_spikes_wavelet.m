@@ -272,8 +272,7 @@ switch num2str(wname)
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
         
-        %%  Other wavelets
-        %   Added by J.J.Chabros 05/2020
+        %% Custom wavelets
         
         case 'sym7'
         Scales = 2:ScaleMax;
@@ -315,9 +314,6 @@ switch num2str(wname)
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
         
-        %%  Custom template method
-        %   Added by J.J.Chabros 06/2020
-        %   https://github.com/jeremi-chabros/CWT
         case 'mea'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
