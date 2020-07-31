@@ -1,6 +1,18 @@
 clear all;
+clc;
 path = '/Users/ssense/Desktop/MEA-analysis/Data/PV-ArchT/rawData/';
-recording = 'PAT200219_2C_DIV170002.mat';
+thisPath = pwd;
+cd (path)
+files = dir('*0006.mat');
+cd (thisPath)
+
+% recording = 'PAT200219_2C_DIV170002.mat';
+
+%% Run through all the files
+for file = 1:length(files)
+    recording = files(file).name;
+    getSpikesCWT(path,recording);
+end
 
 function getSpikesCWT(path, recording)
 %% Load raw data
@@ -9,37 +21,39 @@ file = load(fileName);
 data = file.dat;
 channels = file.channels;
 fs = file.fs;
-
-%% Parameters
-Wid = [0.5 1.0];
-wname = 'mea';
-L = 0;
-Ns = 5;
-multiplier = 4;
-n_spikes = 200;
 ttx = contains(fileName, 'TTX');
 
-disp(['Electrode ', num2str(channel), ':']);
+grd = [15 23 32];
+
 %% Detect spikes
 
 for channel = 1:length(channels)
+    % Parameters
+    load('params.mat');
     
+    disp(['Electrode ', num2str(channel), ':']);
     spikeWaveform = [];
     
     trace = data(:, channel);
-    
-    [spikeFrames, filtTrace, threshold] = detectFramesCWT(trace, fs, Wid, wname, L, Ns, multiplier, ...
-        n_spikes, ttx);
-    
     timestamps = zeros(1, length(trace));
-    timestamps(spikeFrames) = 1;
+    if ~(ismember(channel, grd))
+        [spikeFrames, filtTrace, threshold] = detectFramesCWT(...
+                                              trace,fs,Wid,wname,L,Ns,...
+                                              multiplier,n_spikes,ttx);
+        
+        timestamps(spikeFrames) = 1;
+        
+        for i = 1:length(spikeFrames)
+            if spikeFrames(i)+25 < length(filtTrace)
+                spikeWaveform(i,:) = filtTrace(spikeFrames(i)-25:spikeFrames(i)+25);
+            end
+        end
+        
+        spikes{channel} = spikeWaveform;
+    end
+    
     jSpikes(channel, :) = timestamps;
     
-    for i = 1:length(spikeFrames)
-        if spikeFrames(i)+25 < length(filtTrace)
-            spikeWaveform(i,:) = filtTrace(spikeFrames(i)-25:spikeFrames(i)+25);
-        end
-    end
-    spikes{channel} = spikeWaveform;
 end
+save([recording(1:end-4) '_jSpikes.mat'], 'spikes', 'jSpikes', 'L', 'channels');
 end

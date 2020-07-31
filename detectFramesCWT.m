@@ -108,6 +108,7 @@ try
     
 catch
     disp(['Failed to detect spikes']);
+    spikeFrames = [];
 end
 threshold = multiplier*threshold;
 end
