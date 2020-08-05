@@ -92,7 +92,7 @@ delete(app.UIFigure)
             % Create multiplierEditField
             app.multiplierEditField = uieditfield(app.UIFigure, 'numeric');
             app.multiplierEditField.Position = [90 128 100 22];
-            app.multiplierEditField.Value = 4;
+            app.multiplierEditField.Value = 3.5;
 
             % Create n_spikesEditFieldLabel
             app.n_spikesEditFieldLabel = uilabel(app.UIFigure);

@@ -1,11 +1,12 @@
-function [spikeFrames, filteredData, threshold] = detectFramesCWT(...
-         data, fs, Wid, wname, L, Ns, multiplier, n_spikes, ttx)
+function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectFramesCWT(...
+    data, fs, Wid, wname, L, Ns, multiplier, n_spikes, ttx)
+
 % Input:
 %   data - 1 x n extracellular potential data to be analyzed
 %
 %   fs - sampling frequency [Hz]
 %
-%   Wid - 1 x 2 vector of expected minimum and maximum width [ms] of 
+%   Wid - 1 x 2 vector of expected minimum and maximum width [ms] of
 %         transient to be detected Wid=[Wmin Wmax]
 %         For most practical purposes Wid=[0.5 1.0]
 %
@@ -20,7 +21,7 @@ function [spikeFrames, filteredData, threshold] = detectFramesCWT(...
 %
 %	L - the factor that multiplies [cost of comission]/[cost of omission].
 %       For most practical purposes -0.2 <= L <= 0.2. Larger L --> omissions
-%       likely, smaller L --> false positives likely. 
+%       likely, smaller L --> false positives likely.
 %       For unsupervised detection, the suggested value of L is close to 0
 %
 %   Ns - (scalar): the number of scales to use in detection (Ns >= 2)
@@ -46,8 +47,9 @@ data = filteredData;
 %   Set thresholds
 threshold = mad(filteredData, 1)/0.6745;
 minThreshold = -threshold*2;    % min spike peak voltage
-peakThreshold = -threshold*15;  % max spike peak voltage
-posThreshold = threshold*3;     % positive peak voltage 
+peakThreshold = -threshold*10;  % max spike peak voltage
+posThreshold = threshold*4.0;   % positive peak voltage
+win = 25;                       % [frames]; [ms] = window/25
 
 %   If using custom template:
 if strcmp(wname, 'mea') && ~ttx
@@ -72,36 +74,52 @@ end
 try
     
     sFr = [];
+    spikeWaveforms = [];
     spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
     
-    win = 10;    % [frames]; [ms] = window/25
+    
     
     %   Align the spikes by the negative peak
     %   Post-hoc artifact removal:
     %       a) max -ve peak voltage
     %       b) min -ve pak voltage
     %       c) +ve peak voltage
+    
     for i = 1:length(spikeFrames)
         if spikeFrames(i)+win < length(data)
             
-            %   Look into a 10-frame (0.4 ms) window around the spike
+            %   Look into a window around the spike
             bin = filteredData(spikeFrames(i)-win:spikeFrames(i)+win);
+            spikeWaveforms(:, i) = bin;
             
             %   Obtain peak voltages
-            negativePeak = min(bin);
-            posPeaks = findpeaks(bin);
-            positivePeak = max(posPeaks);
+            
+            pk = findpeaks(bin);
+            pk = sort(pk, 'descend');
+            npk = findpeaks(-bin);
+            
+            for j = 1:length(pk)
+                pkPos(j) = find(bin == pk(j));
+            end
+            
+            for j = 1:length(npk)
+                npkPos(j) = find(-bin == npk(j));
+            end
+            
+            negativePeak = -max(npk);
+            positivePeak = max(pk);
+            %   posPeak = pk(2);
             
             pos = find(bin == negativePeak);
             
             %   Remove the artifacts
-                if negativePeak > peakThreshold && negativePeak < minThreshold
-                    if max(bin) < posThreshold
+            if negativePeak > peakThreshold && negativePeak < minThreshold
+                if positivePeak < posThreshold
                     sFr = [sFr (spikeFrames(i)+pos-win)];
-                    end
                 end
-                
-            % TODO: look into constraining the half-width of a spike  
+            end
+            
+            % TODO: look into constraining the half-width of a spike
         end
     end
     spikeFrames = sFr;
