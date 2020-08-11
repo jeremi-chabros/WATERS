@@ -13,8 +13,6 @@ classdef setParams < matlab.apps.AppBase
         multiplierEditField       matlab.ui.control.NumericEditField
         n_spikesEditFieldLabel    matlab.ui.control.Label
         n_spikesEditField         matlab.ui.control.NumericEditField
-        wnameEditFieldLabel       matlab.ui.control.Label
-        wnameEditField            matlab.ui.control.EditField
         SaveButton                matlab.ui.control.Button
         Wid_maxEditFieldLabel     matlab.ui.control.Label
         Wid_maxEditField          matlab.ui.control.NumericEditField
@@ -33,7 +31,6 @@ params.Wid = Wid;
 params.L = app.LEditField.Value;
 params.Ns = app.NsEditField.Value;
 params.n_spikes = app.n_spikesEditField.Value;
-params.wname = app.wnameEditField.Value;
 params.multiplier = app.multiplierEditField.Value;
 save('params.mat','-struct','params');
 delete(app.UIFigure)
@@ -104,17 +101,6 @@ delete(app.UIFigure)
             app.n_spikesEditField = uieditfield(app.UIFigure, 'numeric');
             app.n_spikesEditField.Position = [89 98 100 22];
             app.n_spikesEditField.Value = 200;
-
-            % Create wnameEditFieldLabel
-            app.wnameEditFieldLabel = uilabel(app.UIFigure);
-            app.wnameEditFieldLabel.HorizontalAlignment = 'right';
-            app.wnameEditFieldLabel.Position = [31 68 44 22];
-            app.wnameEditFieldLabel.Text = 'wname';
-
-            % Create wnameEditField
-            app.wnameEditField = uieditfield(app.UIFigure, 'text');
-            app.wnameEditField.Position = [90 68 100 22];
-            app.wnameEditField.Value = 'mea';
 
             % Create SaveButton
             app.SaveButton = uibutton(app.UIFigure, 'push');
