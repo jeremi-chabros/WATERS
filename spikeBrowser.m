@@ -27,6 +27,15 @@ classdef spikeBrowser < matlab.apps.AppBase
         UIAxes5                       matlab.ui.control.UIAxes
         ChannelIDEditField_2Label     matlab.ui.control.Label
         ChannelIDEditField_2          matlab.ui.control.NumericEditField
+        OverlaysTab                   matlab.ui.container.Tab
+        Panel_3                       matlab.ui.container.Panel
+        UIAxes6_3                     matlab.ui.control.UIAxes
+        Panel_4                       matlab.ui.container.Panel
+        UIAxes6_4                     matlab.ui.control.UIAxes
+        Panel_5                       matlab.ui.container.Panel
+        UIAxes6_5                     matlab.ui.control.UIAxes
+        Panel_6                       matlab.ui.container.Panel
+        UIAxes6_6                     matlab.ui.control.UIAxes
         RightPanel                    matlab.ui.container.Panel
         TabGroup                      matlab.ui.container.TabGroup
         SpikeTab                      matlab.ui.container.Tab
@@ -102,6 +111,10 @@ classdef spikeBrowser < matlab.apps.AppBase
         channels;
         wavelets;
         spike_struct;
+        all_spikes;
+        uniqueSpikes;
+        intersectMatrix;
+        F;
     end
     
     methods (Access = private)
@@ -111,8 +124,7 @@ classdef spikeBrowser < matlab.apps.AppBase
             app.UIAxes.cla;
             
             plot(app.UIAxes, trace, 'k');
-            hold(app.UIAxes, 'on');
-            
+            hold(app.UIAxes, 'on')
             scatter(app.UIAxes, (spikeTimes), app.y, 'v','filled');
             
             xlim(app.UIAxes, [1 length(trace)]);
@@ -124,38 +136,47 @@ classdef spikeBrowser < matlab.apps.AppBase
             app.UIAxes.cla;
             
             plot(app.UIAxes, app.trace, 'k');
-            hold(app.UIAxes, 'on');
+            hold(app.UIAxes, 'on')
             scatter(app.UIAxes, (app.spikeTimes), app.y, 'v','filled');
             
             xlim(app.UIAxes, [(app.spikeTimes(app.spike)- app.binLength), (app.spikeTimes(app.spike)+ app.binLength)]);
             ylim(app.UIAxes, [-app.thr*7 app.thr*7]);
         end
         
-        function plotOverlay(app)
-            
+        function plotOverlay(app, ax, spikeVec)
+
             fs = 25000;
             durationInSec = 0.001;
             durationInFrame = fs * durationInSec;
             alpha = 0.2;
             peakAlignedSpikeMatrix  = [];
             
-            app.UIAxes2.cla;
+
+            
+
+            ax.cla;
             
             [spikeWaves, ~] = spikeAlignment(...
-                app.trace, app.spikeVector, 25000, 0.002);
+                app.trace, spikeVec, 25000, 0.002);
+
+            n2plot = size(spikeWaves,1);
+            if n2plot > 1000
+                n2plot = 1000;
+            end
             
-            for spikeTimeSeries = 1:100
+            
+            for spikeTimeSeries = 1:n2plot
                 [pks,locs] = findpeaks(-spikeWaves(spikeTimeSeries, :));
                 spikePeakLoc = locs(abs(pks) == max(abs(pks)));
                 spStart = spikePeakLoc - round(durationInFrame / 2);
                 spEnd = spikePeakLoc + round(durationInFrame / 2);
                 if spStart > 0 && spEnd < size(spikeWaves, 2)
                     
-                    plot(app.UIAxes2, spikeWaves(spikeTimeSeries, spStart:spEnd), 'Color', [0 0 0] + 1 - alpha);
+                    plot(ax, spikeWaves(spikeTimeSeries, spStart:spEnd), 'Color', [0 0 0] + 1 - alpha);
                     peakAlignedSpikeMatrix = [peakAlignedSpikeMatrix; ...
                         spikeWaves(spikeTimeSeries, spStart:spEnd)];
                 end
-                hold(app.UIAxes2, 'on');
+                hold(ax, 'on');
             end
             
             aveSpikeWaveForm = median(peakAlignedSpikeMatrix);
@@ -165,12 +186,12 @@ classdef spikeBrowser < matlab.apps.AppBase
             spStart = spikePeakLoc - round(durationInFrame / 2);
             spEnd = spikePeakLoc + round(durationInFrame / 2);
             if spStart > 0 && spEnd < size(spikeWaves, 2)
-                plot(app.UIAxes2, aveSpikeWaveForm(spStart:spEnd), 'Color', [1 1 1], 'LineWidth',1.7);
-                hold(app.UIAxes2, 'on');
-                plot(app.UIAxes2, aveSpikeWaveForm(spStart:spEnd), 'Color', [0 0 0], 'LineWidth',1);
+                plot(ax, aveSpikeWaveForm(spStart:spEnd), 'Color', [1 1 1], 'LineWidth',1.7);
+                hold(ax, 'on');
+                plot(ax, aveSpikeWaveForm(spStart:spEnd), 'Color', [0 0 0], 'LineWidth',1);
             end
-            xlim(app.UIAxes2, [1 length(aveSpikeWaveForm(spStart:spEnd))]);
-            ylim(app.UIAxes2, 'auto');
+            xlim(ax, [1 length(aveSpikeWaveForm(spStart:spEnd))]);
+            ylim(ax, 'auto');
             
         end
         
@@ -188,7 +209,7 @@ classdef spikeBrowser < matlab.apps.AppBase
             
             app.UIAxes3.cla;
             histogram(app.UIAxes3, app.amp, 'FaceColor', [0.4940, 0.1840, 0.5560]);
-            hold(app.UIAxes3);
+            hold(app.UIAxes3)
             if strcmp(app.thrMode, 'MAD')
                 app.thr = mad(app.trace, 1)/0.6745;
             else
@@ -213,38 +234,38 @@ classdef spikeBrowser < matlab.apps.AppBase
         function plotTemplate(app)
             app.UIAxes2.cla;
             plot(app.UIAxes2, app.template, 'k','LineWidth',1.5);
-            ylim(app.UIAxes2, 'auto');
+            ylim(app.UIAxes2, [min(app.template)-1 max(app.template)+1]);
             xlim(app.UIAxes2, [1 100]);
         end
         
         function getIntersectMatrix(app)
             
-            spike_struct = app.spikeCell{app.channel};
-            wavelets = fieldnames(spike_struct);
-            all_spikes = [];
+            app.spike_struct = app.spikeCell{app.channel};
+            wavelets = fieldnames(app.spike_struct);
+            app.all_spikes = [];
             for wav = 1:numel(wavelets)
-                all_spikes = union(all_spikes, spike_struct.(wavelets{wav}));
+                app.all_spikes = union(app.all_spikes, app.spike_struct.(wavelets{wav}));
             end
             clear F;
-            intersectMatrix = zeros(length(all_spikes),length(wavelets));
+            app.intersectMatrix = zeros(length(app.all_spikes),length(wavelets));
             
             for wav = 1:length(wavelets)
-                app.spikeTimes = spike_struct.(wavelets{wav});
-                for spikeIndex = 1:length(all_spikes)
-                    if ismember(all_spikes(spikeIndex), app.spikeTimes)
-                        intersectMatrix(spikeIndex, wav) = 1;
+                spikeTimes = app.spike_struct.(wavelets{wav});
+                for spikeIndex = 1:length(app.all_spikes)
+                    if ismember(app.all_spikes(spikeIndex), spikeTimes)
+                        app.intersectMatrix(spikeIndex, wav) = 1;
                     end
                 end
             end
             
-            for spike = 1:length(intersectMatrix)
+            for spike = 1:length(app.intersectMatrix)
                 clear ff
-                ff = find(intersectMatrix(spike, :) == 1);
+                ff = find(app.intersectMatrix(spike, :) == 1);
                 if length(ff) == 1 && ff ~=0
                     F(spike) = ff;
                 end
             end
-            
+            app.F = F;
         end
         function updateVars(app)
             app.spikeTimes = app.spike_struct.(app.wavelet);
@@ -270,6 +291,11 @@ classdef spikeBrowser < matlab.apps.AppBase
                 num2str(round(s/2)), num2str(round(0.75*s)), num2str(s)};
             app.SpikeSlider.MajorTicks = [1 s/4 s/2 0.75*s s];
         end
+            
+            
+            
+            
+ 
     end
     
 
@@ -298,6 +324,12 @@ classdef spikeBrowser < matlab.apps.AppBase
             % UI labels
             app.WaveletDropDown.Items = strrep(app.wavelets, 'p','.');
             app.lbbLabel.Text = [char(956), 'V'];
+            wav = strrep(app.wavelets, 'p','.');
+            app.Panel_3.Title = wav{1};
+            app.Panel_4.Title = wav{2};
+            app.Panel_5.Title = wav{3};
+            app.Panel_6.Title = wav{4};
+            
             
         end
 
@@ -312,6 +344,20 @@ classdef spikeBrowser < matlab.apps.AppBase
             app.spikeTimes = app.spike_struct.(app.wavelet);
             updateVars(app);
             app.ChannelIDEditField_2.Value = app.ChannelIDEditField.Value;
+            getIntersectMatrix(app);
+                
+            %% Plot overlays
+            ax_list = [app.UIAxes6_3, app.UIAxes6_4, app.UIAxes6_5, app.UIAxes6_6];
+
+            for wav = 1:numel(app.wavelets)
+                
+                uqSpikes = app.all_spikes(app.F == wav);
+                uniqueSpikes = zeros(size(app.trace));
+                uniqueSpikes(uqSpikes) = 1;
+                
+                plotOverlay(app, ax_list(wav), uniqueSpikes);
+                ylim(ax_list(wav), [-7*app.thr 4*app.thr]);
+            end
         end
 
         % Value changed function: SpikeSlider
@@ -332,7 +378,7 @@ classdef spikeBrowser < matlab.apps.AppBase
             
             plotTrace(app, app.trace, app.spikeTimes);
             if strcmp(app.spikeMethod, 'Overlay')
-                plotOverlay(app);
+                plotOverlay(app, app.UIAxes2, app.spikeVector);
             else
                 plotTemplate(app);
             end
@@ -432,7 +478,7 @@ classdef spikeBrowser < matlab.apps.AppBase
         % Button pushed function: OverlayButton
         function OverlayButtonPushed(app, event)
             app.spikeMethod = app.OverlayButton.Text;
-            plotOverlay(app);
+            plotOverlay(app, app.UIAxes2, app.spikeVector);
         end
 
         % Button pushed function: TemplateButton
@@ -443,39 +489,18 @@ classdef spikeBrowser < matlab.apps.AppBase
 
         % Button pushed function: AvePlotButton
         function AvePlotButtonPushed(app, event)
-            all_spikes = [];
-            sp_struct = app.spikeCell{app.channel};
             app.UIAxes4.cla;
             app.UIAxes5.cla;
-            for wav = 1:numel(app.wavelets)
-                all_spikes = union(all_spikes, sp_struct.(app.wavelets{wav}));
-            end
-            clear F;
-            intersectMatrix = zeros(length(all_spikes),length(app.wavelets));
-            
-            for wav = 1:length(app.wavelets)
-                app.spikeTimes = sp_struct.(app.wavelets{wav});
-                for spikeIndex = 1:length(all_spikes)
-                    if ismember(all_spikes(spikeIndex), app.spikeTimes)
-                        intersectMatrix(spikeIndex, wav) = 1;
-                    end
-                end
-            end
-            
-            for spike = 1:length(intersectMatrix)
-                clear ff
-                ff = find(intersectMatrix(spike, :) == 1);
-                if length(ff) == 1 && ff ~=0
-                    F(spike) = ff;
-                end
-            end
+
+            getIntersectMatrix(app);
+
             
             moving_average_dur_in_sec = 10;
             moving_average_window_frame = moving_average_dur_in_sec * 25000;
             
             for wav = 1:numel(app.wavelets)
                 spike_train = zeros(length(app.trace), 1);
-                spike_train(sp_struct.(app.wavelets{wav})) = 1;
+                spike_train(app.spike_struct.(app.wavelets{wav})) = 1;
                 spike_count_moving_mean = movmean(spike_train, moving_average_window_frame);
                 plot(app.UIAxes4, spike_count_moving_mean, 'Linewidth', 2)
                 hold(app.UIAxes4, 'on');
@@ -488,45 +513,45 @@ classdef spikeBrowser < matlab.apps.AppBase
             ylabel(app.UIAxes4, 'Moving average spike count')
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            app.yOffset = app.thr*7;
+            yOffset = app.thr*7;
             
             plot(app.UIAxes5, app.trace,'k');
             hold(app.UIAxes5, 'on');
             
             %   Plot all spikes
             
-            app.y = repmat(app.yOffset - 0, ...
-                length(all_spikes), 1);
+            y = repmat(yOffset - 0, ...
+                length(app.all_spikes), 1);
             
-            scatter(app.UIAxes5, (all_spikes)', ...
-                app.y, 'v','filled');
+            scatter(app.UIAxes5, (app.all_spikes)', ...
+                y, 'v','filled');
             hold(app.UIAxes5, 'on');
             
             
             %   Plot unique spikes for each wavelet
             for wav = 1:length(app.wavelets)
                 
-                uqSpkIdx = F == wav;
-                uniqueSpikes = all_spikes(uqSpkIdx);
+                uqSpkIdx = app.F == wav;
+                uniqueSpikes = app.all_spikes(uqSpkIdx);
                 
-                app.y = repmat(app.yOffset - wav*3, ...
+                y = repmat(yOffset - wav*3, ...
                     length(uniqueSpikes), 1);
                 spikeCounts{wav+1} = length(app.y);
                 
                 scatter(app.UIAxes5, (uniqueSpikes)', ...
-                    app.y, 'v','filled');
+                    y, 'v','filled');
                 hold(app.UIAxes5, 'on');
             end
             
             %   Plot common spikes (detected by all the wavelets)
-            uqSpkIdx = F == 0;
-            uniqueSpikes = all_spikes(uqSpkIdx);
+            uqSpkIdx = app.F == 0;
+            uniqueSpikes = app.all_spikes(uqSpkIdx);
             
-            app.y = repmat(app.yOffset - (length(app.wavelets)+7), ...
+            y = repmat(yOffset - (length(app.wavelets)+7), ...
                 length(uniqueSpikes), 1);
             
             scatter(app.UIAxes5, (uniqueSpikes)', ...
-                app.y, 'v','filled');
+                y, 'v','filled');
             
             xlim(app.UIAxes5,[1 length(app.trace)]);
             legend_labels = [{'Filtered trace' ;['All spikes']}; strcat(app.wavelets, ' (unique)');'Common spikes'];
@@ -540,6 +565,7 @@ classdef spikeBrowser < matlab.apps.AppBase
             value = app.WaveletDropDown.Value;
             app.wavelet = strrep(value, '.','p');
             updateVars(app);
+
         end
 
         % Value changed function: ChannelIDEditField_2
@@ -582,7 +608,7 @@ classdef spikeBrowser < matlab.apps.AppBase
             app.UIFigure = uifigure('Visible', 'off');
             app.UIFigure.AutoResizeChildren = 'off';
             app.UIFigure.Position = [250 250 925 532];
-            app.UIFigure.Name = 'MATLAB App';
+            app.UIFigure.Name = 'Spike Browser';
             app.UIFigure.SizeChangedFcn = createCallbackFcn(app, @updateAppLayout, true);
 
             % Create GridLayout
@@ -601,7 +627,7 @@ classdef spikeBrowser < matlab.apps.AppBase
 
             % Create TabGroup2
             app.TabGroup2 = uitabgroup(app.LeftPanel);
-            app.TabGroup2.Position = [1 6 587 525];
+            app.TabGroup2.Position = [6 6 582 525];
 
             % Create TraceTab
             app.TraceTab = uitab(app.TabGroup2);
@@ -730,6 +756,82 @@ classdef spikeBrowser < matlab.apps.AppBase
             app.ChannelIDEditField_2 = uieditfield(app.MovingaverageTab, 'numeric');
             app.ChannelIDEditField_2.ValueChangedFcn = createCallbackFcn(app, @ChannelIDEditField_2ValueChanged, true);
             app.ChannelIDEditField_2.Position = [150 467 35 22];
+
+            % Create OverlaysTab
+            app.OverlaysTab = uitab(app.TabGroup2);
+            app.OverlaysTab.Title = 'Overlays';
+
+            % Create Panel_3
+            app.Panel_3 = uipanel(app.OverlaysTab);
+            app.Panel_3.TitlePosition = 'centertop';
+            app.Panel_3.Title = 'Panel';
+            app.Panel_3.FontWeight = 'bold';
+            app.Panel_3.FontSize = 14;
+            app.Panel_3.Position = [1 1 135 493];
+
+            % Create UIAxes6_3
+            app.UIAxes6_3 = uiaxes(app.Panel_3);
+            title(app.UIAxes6_3, '')
+            xlabel(app.UIAxes6_3, '')
+            ylabel(app.UIAxes6_3, 'Voltage [\muV]')
+            app.UIAxes6_3.XColor = [0.9412 0.9412 0.9412];
+            app.UIAxes6_3.XTick = [0 51];
+            app.UIAxes6_3.Position = [1 0 133 472];
+
+            % Create Panel_4
+            app.Panel_4 = uipanel(app.OverlaysTab);
+            app.Panel_4.TitlePosition = 'centertop';
+            app.Panel_4.Title = 'Panel';
+            app.Panel_4.FontWeight = 'bold';
+            app.Panel_4.FontSize = 14;
+            app.Panel_4.Position = [150 1 135 493];
+
+            % Create UIAxes6_4
+            app.UIAxes6_4 = uiaxes(app.Panel_4);
+            title(app.UIAxes6_4, '')
+            xlabel(app.UIAxes6_4, '')
+            ylabel(app.UIAxes6_4, '')
+            app.UIAxes6_4.PlotBoxAspectRatio = [1 4.92571428571429 1];
+            app.UIAxes6_4.XColor = [0.9412 0.9412 0.9412];
+            app.UIAxes6_4.XTick = [0 51];
+            app.UIAxes6_4.Position = [1 0 133 472];
+
+            % Create Panel_5
+            app.Panel_5 = uipanel(app.OverlaysTab);
+            app.Panel_5.TitlePosition = 'centertop';
+            app.Panel_5.Title = 'Panel';
+            app.Panel_5.FontWeight = 'bold';
+            app.Panel_5.FontSize = 14;
+            app.Panel_5.Position = [299 1 135 493];
+
+            % Create UIAxes6_5
+            app.UIAxes6_5 = uiaxes(app.Panel_5);
+            title(app.UIAxes6_5, '')
+            xlabel(app.UIAxes6_5, '')
+            ylabel(app.UIAxes6_5, '')
+            app.UIAxes6_5.PlotBoxAspectRatio = [1 4.92571428571429 1];
+            app.UIAxes6_5.XColor = [0.9412 0.9412 0.9412];
+            app.UIAxes6_5.XTick = [0 51];
+            app.UIAxes6_5.Position = [1 1 133 473];
+
+            % Create Panel_6
+            app.Panel_6 = uipanel(app.OverlaysTab);
+            app.Panel_6.TitlePosition = 'centertop';
+            app.Panel_6.Title = 'Panel';
+            app.Panel_6.FontWeight = 'bold';
+            app.Panel_6.FontSize = 14;
+            app.Panel_6.Position = [447 1 135 492];
+
+            % Create UIAxes6_6
+            app.UIAxes6_6 = uiaxes(app.Panel_6);
+            title(app.UIAxes6_6, '')
+            xlabel(app.UIAxes6_6, '')
+            ylabel(app.UIAxes6_6, '')
+            app.UIAxes6_6.PlotBoxAspectRatio = [1 4.92571428571429 1];
+            app.UIAxes6_6.XColor = [0.9412 0.9412 0.9412];
+            app.UIAxes6_6.XTick = [0 51];
+            app.UIAxes6_6.XTickLabel = {'0'};
+            app.UIAxes6_6.Position = [2 1 132 471];
 
             % Create RightPanel
             app.RightPanel = uipanel(app.GridLayout);
