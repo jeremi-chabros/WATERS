@@ -317,20 +317,23 @@ switch num2str(wname)
         case 'mea'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
-        for i = 2:length(Scales)
+        for i = 4:length(Scales)
             %indicators of positive coefficients
             IndPos = (c(i,:) > 0);
             %indicators of derivative
             IndDer = diff(IndPos);
+
             %indices of negative slope zero crossings
             IndZeroCross = find(IndDer == -1);
             IndMax = IndZeroCross > 500;
             Ind(2) = min(IndZeroCross(IndMax))+1;
             IndMin = IndZeroCross < 500;
             Ind(1) = max(IndZeroCross(IndMin));
+
             WidthTable(i) = diff(Ind) * dt;
         end
         WidthTable = WidthTable + [1:length(Scales)] * Eps;
+        
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
         

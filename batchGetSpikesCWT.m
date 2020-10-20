@@ -1,13 +1,14 @@
 clear all; close all; clc;
 
-path = '/Users/ssense/Desktop/MEA-analysis/Data/PV-ArchT/rawData/';
+path = '/Users/jeremi/mea/Data/';
 thisPath = pwd;
 cd (path)
-files = dir('*0002.mat');
+files = dir('*.mat');
 cd (thisPath)
+wname_list = {'mea'};
 
 %% Run through all the files
 for file = 1:length(files)
     recording = files(file).name;
-    getSpikesCWT(path, recording);
+    getSpikesCWT(path, recording, wname_list);
 end
