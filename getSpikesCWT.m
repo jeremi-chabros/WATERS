@@ -1,6 +1,5 @@
-function getSpikesCWT(path, recording, wname_list)
+function getSpikesCWT(fileName, wname_list)
 %% Load raw data
-fileName = [path recording];
 file = load(fileName);
 data = file.dat;
 channels = file.channels;
@@ -8,26 +7,34 @@ fs = file.fs;
 ttx = contains(fileName, 'TTX');
 spike_struct = struct;
 
-grd = [15 23 32];
+grd = [15];
 
 %% Detect spikes
 
-load('params.mat');
+% call setParams to set parameters manually
+load('params.mat'); 
+% L = -0.3;
 
+
+h = waitbar(0, ['Detecting spikes...']);
 
 for channel = 1:length(channels)
-    waitbar(channel/length(channels), ['Electrode: ' num2str(channel) '/' num2str(length(channels))]);
+    
     for wname = wname_list
+       
         wname = char(wname);
         valid_wname = strrep(wname, '.', 'p');
         spikeWaveforms = [];
         
-        trace = data(:, channel);
+        trace = data(1:3000000, channel);
         timestamps = zeros(1, length(trace));
+        
         if ~(ismember(channel, grd))
-            [spikeFrames, spikeWaveforms, filtTrace, threshold] = detectFramesCWT(...
-                trace,fs,Wid,wname,L,Ns,...
-                multiplier,n_spikes,ttx);
+            
+            [spikeFrames, spikeWaveforms, filtTrace, threshold] = ...
+            detectFramesCWT(trace,fs,Wid,wname,L,Ns, ...
+                            multiplier,n_spikes,ttx);
+                            
             if strcmp(wname, 'mea')
                 load('mother.mat','Y');
                 templates(channel, :) = Y;
@@ -43,7 +50,12 @@ for channel = 1:length(channels)
 
     end
     spikeCell{channel} = spike_struct;
+    
+    waitbar(channel/length(channels), h);
 end
-save([recording(1:end-4) '_spike_struct.mat'], 'spikes', 'jSpikes', 'L', 'threshold',...
-    'channels', 'grd', 'traces', 'templates', 'spikeCell');
+close(h);
+save(['/Users/jeremi/mea/Spikes/', fileName(1:end-4),'L_', num2str(L), '_spike_struct.mat'],...
+    'spikes', 'jSpikes', 'L', 'threshold','channels',...
+    'grd', 'traces', 'templates', 'spikeCell',...
+    '-v7.3');
 end

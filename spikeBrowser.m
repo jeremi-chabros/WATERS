@@ -121,7 +121,7 @@ classdef spikeBrowser < matlab.apps.AppBase
         
         function plotTrace(app, trace, spikeTimes)
             
-            app.UIAxes.cla;
+            cla(app.UIAxes);
             
             plot(app.UIAxes, trace, 'k');
             hold(app.UIAxes, 'on')
@@ -326,9 +326,18 @@ classdef spikeBrowser < matlab.apps.AppBase
             app.lbbLabel.Text = [char(956), 'V'];
             wav = strrep(app.wavelets, 'p','.');
             app.Panel_3.Title = wav{1};
-            app.Panel_4.Title = wav{2};
-            app.Panel_5.Title = wav{3};
-            app.Panel_6.Title = wav{4};
+            
+            switch numel(wav)
+                case 2
+                    app.Panel_4.Title = wav{2};
+                case 3
+                    app.Panel_4.Title = wav{2};
+                    app.Panel_5.Title = wav{3};
+                case 4
+                    app.Panel_4.Title = wav{2};
+                    app.Panel_5.Title = wav{3};
+                    app.Panel_6.Title = wav{4};
+            end
             
             
         end
