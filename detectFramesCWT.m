@@ -1,5 +1,5 @@
 function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectFramesCWT(...
-    data, fs, Wid, wname, L, Ns, multiplier, n_spikes, ttx)
+    data, fs, Wid, wname, L, Ns, multiplier, n_spikes, ttx, varargin)
 
 % Input:
 %   data - 1 x n extracellular potential data to be analyzed
@@ -45,10 +45,17 @@ filteredData = filtfilt(b, a, double(data));
 data = filteredData;
 
 %   Set thresholds
-threshold = mad(filteredData, 1)/0.6745;
-minThreshold = -threshold*2;    % min spike peak voltage
-peakThreshold = -threshold*10;  % max spike peak voltage
-posThreshold = threshold*4.0;   % positive peak voltage
+% if ttx
+%         threshold = varargin{1};
+% else
+%     threshold = mad(filteredData, 1)/0.6745;
+% end
+
+ threshold = mad(filteredData, 1)/0.6745;
+
+minThreshold = -threshold*2.5;    % min spike peak voltage
+peakThreshold = -threshold*15;  % max spike peak voltage
+posThreshold = threshold*5.0;   % positive peak voltage
 win = 25;                       % [frames]; [ms] = window/25
 
 %   If using custom template:
@@ -125,7 +132,7 @@ try
     spikeFrames = sFr;
     
 catch
-    disp(['Failed to detect spikes']);
+%     disp(['Failed to detect spikes']);
     spikeFrames = [];
 end
 threshold = multiplier*threshold;
