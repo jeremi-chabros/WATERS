@@ -32,7 +32,7 @@ function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectFramesCW
 %
 %   ttx - flag for the recordings with TTX added: 1 = TTX, 0 = control
 
-refPeriod_ms = 1;
+refPeriod_ms = 2;
 
 %  Filter signal
 lowpass = 600;
@@ -51,11 +51,12 @@ data = filteredData;
 %     threshold = mad(filteredData, 1)/0.6745;
 % end
 
- threshold = mad(filteredData, 1)/0.6745;
+threshold = mad(filteredData, 1)/0.6745;
 
-minThreshold = -threshold*2.5;    % min spike peak voltage
-peakThreshold = -threshold*15;  % max spike peak voltage
-posThreshold = threshold*5.0;   % positive peak voltage
+% minThreshold = -threshold*2.5;    % min spike peak voltage
+% peakThreshold = -threshold*15;  % max spike peak voltage
+% posThreshold = threshold*5.0;   % positive peak voltage
+
 win = 25;                       % [frames]; [ms] = window/25
 
 %   If using custom template:
@@ -82,11 +83,9 @@ try
     
     sFr = [];
     spikeWaveforms = [];
-    spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
+    spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
     
-    
-    
-    %   Align the spikes by the negative peak
+    %   Align the spikes by negative peaks
     %   Post-hoc artifact removal:
     %       a) max -ve peak voltage
     %       b) min -ve pak voltage
@@ -100,39 +99,21 @@ try
             spikeWaveforms(:, i) = bin;
             
             %   Obtain peak voltages
-            
-            pk = findpeaks(bin);
-            pk = sort(pk, 'descend');
-            npk = findpeaks(-bin);
-            
-            for j = 1:length(pk)
-                pkPos(j) = find(bin == pk(j));
-            end
-            
-            for j = 1:length(npk)
-                npkPos(j) = find(-bin == npk(j));
-            end
-            
-            negativePeak = -max(npk);
-            positivePeak = max(pk);
-            %   posPeak = pk(2);
-            
+            negativePeak = min(bin);
+            posPeak = max(bin);
             pos = find(bin == negativePeak);
             
             %   Remove the artifacts
-            if negativePeak > peakThreshold && negativePeak < minThreshold
-                if positivePeak < posThreshold
-                    sFr = [sFr (spikeFrames(i)+pos-win)];
-                end
+            if negativePeak < -threshold*3 && posPeak < threshold*3
+            sFr = [sFr (spikeFrames(i)+pos-win)];
             end
-            
-            % TODO: look into constraining the half-width of a spike
+
         end
     end
     spikeFrames = sFr;
     
 catch
-%     disp(['Failed to detect spikes']);
+    disp(['Failed to detect spikes']);
     spikeFrames = [];
 end
 threshold = multiplier*threshold;

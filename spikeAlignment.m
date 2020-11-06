@@ -38,7 +38,6 @@ duration = fs * durationInSec;
 % if it is a spike, then we plot duration frames around that point
 % then we hold, and search for the next spike
 
-% subplot(1, 2, 1)
 spikeTimes = find(spikeTrain == 1);
 spikeStore = zeros(length(spikeTimes), 2*round(duration/2)+1); % pre-allocation is paramount here
 for i = 1:length(spikeTimes)
@@ -55,13 +54,8 @@ for i = 1:length(spikeTimes)
         spikeStore(i, :) = data(spikePoint - round(duration/2):(spikePoint + round(duration/2)));
     end
 end
-% aesthetics()
 
 averageSpike = mean(spikeStore);
 spikeWaves = spikeStore;
-%subplot(1, 2, 2)
-%title('Average spike')
-%plot(averageSpike)
-%aesthetics()
 
 end

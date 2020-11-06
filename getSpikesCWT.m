@@ -1,5 +1,13 @@
-function getSpikesCWT(fileName, wname_list)
+function getSpikesCWT(fileName, wname_list, L)
 %% Load raw data
+
+multiplier = 3.5;
+n_spikes = 200;
+Ns = 5;
+Wid = [0.5 1];
+saveName = ['/Users/jeremi/mea/spikes/', fileName(1:end-4),'L_',...
+    num2str(L),'_spike_struct.mat'];
+if ~exist(saveName, 'file')
 file = load(fileName);
 data = file.dat;
 channels = file.channels;
@@ -12,11 +20,14 @@ grd = [15];
 %% Detect spikes
 
 % call setParams to set parameters manually
-load('params.mat'); 
-% L = -0.3;
+% load('params.mat');
+
+
 
 
 h = waitbar(0, ['Detecting spikes...']);
+
+
 
 for channel = 1:length(channels)
     
@@ -26,7 +37,7 @@ for channel = 1:length(channels)
         valid_wname = strrep(wname, '.', 'p');
         spikeWaveforms = [];
         
-        trace = data(1:3000000, channel);
+        trace = data(:, channel);
         timestamps = zeros(1, length(trace));
         
         if ~(ismember(channel, grd))
@@ -54,8 +65,15 @@ for channel = 1:length(channels)
     waitbar(channel/length(channels), h);
 end
 close(h);
-save(['/Users/jeremi/mea/Spikes/', fileName(1:end-4),'L_', num2str(L), '_spike_struct.mat'],...
+
+% save(['/Users/jeremi/mea/spikes/', fileName(1:end-4),'L_', num2str(L), '_spike_struct.mat'],...
+%     'spikes', 'jSpikes', 'L', 'threshold','channels',...
+%     'grd', 'traces', 'templates', 'spikeCell',...
+%     '-v7.3');
+
+save(saveName,...
     'spikes', 'jSpikes', 'L', 'threshold','channels',...
-    'grd', 'traces', 'templates', 'spikeCell',...
+    'grd', ...
     '-v7.3');
+end
 end
