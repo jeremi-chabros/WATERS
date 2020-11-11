@@ -134,6 +134,7 @@ if strcmp(method, 'peakghost')
         spEnd = spikePeakLoc + round(durationInFrame / 2);
         if spStart > 0 && spEnd < size(spikeMatrix, 2)
             plot(spikeMatrix(spikeTimeSeries, spStart:spEnd), 'Color', [0 0 0] + 1 - alpha);
+
             peakAlignedSpikeMatrix = [peakAlignedSpikeMatrix; ...
                 spikeMatrix(spikeTimeSeries, spStart:spEnd)];
                 
@@ -153,7 +154,7 @@ if strcmp(method, 'peakghost')
     spStart = spikePeakLoc - round(durationInFrame / 2);
     spEnd = spikePeakLoc + round(durationInFrame / 2);
     if spStart > 0 && spEnd < size(spikeMatrix, 2)
-       plot(aveSpikeWaveForm(spStart:spEnd), 'Color', [0 0 0]);
+       plot(aveSpikeWaveForm(spStart:spEnd), 'Color', [0 0 0], 'LineWidth',1);
     else
 %        warning(['Spike exceeded limit, not plotted. Spike Number: ' num2str(spikeTimeSeries)])
     end 

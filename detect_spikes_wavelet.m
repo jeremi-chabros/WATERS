@@ -1,4 +1,4 @@
-function TE = detect_spikes_wavelet(...
+function [TE,c] = detect_spikes_wavelet(...
     Signal, SFr, Wid, Ns, option, L, wname, PltFlg, CmtFlg)
 
 % DETECT_SPIKES_WAVELET wavelet based algorithm for detection of transients
@@ -317,7 +317,7 @@ switch num2str(wname)
         case 'mea'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
-        for i = 4:length(Scales)
+        for i = 3:length(Scales)
             %indicators of positive coefficients
             IndPos = (c(i,:) > 0);
             %indicators of derivative

@@ -2,7 +2,8 @@ function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectFramesCW
     data, fs, Wid, wname, L, Ns, multiplier, n_spikes, ttx, varargin)
 
 % Input:
-%   data - 1 x n extracellular potential data to be analyzed
+%
+%   data - 1 x n extracellular voltage trace to be analyzed
 %
 %   fs - sampling frequency [Hz]
 %
@@ -32,6 +33,20 @@ function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectFramesCW
 %
 %   ttx - flag for the recordings with TTX added: 1 = TTX, 0 = control
 
+
+% Output:
+%
+%   spikeFrames - vector containing frames where spikes were detected (divided
+%               by fs yields spike times)
+%
+%   spikeWaveforms - matrix containing spike waveforms
+%
+%   filteredData - filtered trace
+%
+%   threshold - median absolute deviation of the voltage amplitudes in
+%   trace
+
+
 refPeriod_ms = 2;
 
 %  Filter signal
@@ -44,28 +59,18 @@ filteredData = filtfilt(b, a, double(data));
 
 data = filteredData;
 
-%   Set thresholds
-% if ttx
-%         threshold = varargin{1};
-% else
-%     threshold = mad(filteredData, 1)/0.6745;
-% end
+% threshold = mad(filteredData, 1)/0.6745;
+threshold = median(abs(filteredData - mean(filteredData))) / 0.6745;  % timS: this seems faster.
 
-threshold = mad(filteredData, 1)/0.6745;
+win = 25;   % [frames]; [ms] = window/25
 
-% minThreshold = -threshold*2.5;    % min spike peak voltage
-% peakThreshold = -threshold*15;  % max spike peak voltage
-% posThreshold = threshold*5.0;   % positive peak voltage
-
-win = 25;                       % [frames]; [ms] = window/25
-
-%   If using custom template:
+%   If using custom wavelet:
 if strcmp(wname, 'mea') && ~ttx
     
     %   Use threshold-based spike detection to obtain the median waveform
     %   from n_spikes
     try
-        ave_trace = getTemplate(data, multiplier, refPeriod_ms, n_spikes);
+        [ave_trace, ~] = getTemplate(data, multiplier, refPeriod_ms, n_spikes);
     catch
         disp(['Failed to obtain mean waveform']);
     end
@@ -83,6 +88,7 @@ try
     
     sFr = [];
     spikeWaveforms = [];
+
     spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
     
     %   Align the spikes by negative peaks
@@ -92,22 +98,22 @@ try
     %       c) +ve peak voltage
     
     for i = 1:length(spikeFrames)
-        if spikeFrames(i)+win < length(data)
+        if spikeFrames(i)+win < length(data) && spikeFrames(i)-win > 1
             
             %   Look into a window around the spike
             bin = filteredData(spikeFrames(i)-win:spikeFrames(i)+win);
-            spikeWaveforms(:, i) = bin;
-            
+
             %   Obtain peak voltages
             negativePeak = min(bin);
             posPeak = max(bin);
             pos = find(bin == negativePeak);
             
             %   Remove the artifacts
-            if negativePeak < -threshold*3 && posPeak < threshold*3
-            sFr = [sFr (spikeFrames(i)+pos-win)];
+            if negativePeak < -threshold*2 && posPeak < threshold*4
+                sFr = [sFr (spikeFrames(i)+pos-win)];
+                spikeWaveforms = [spikeWaveforms, bin];
             end
-
+            
         end
     end
     spikeFrames = sFr;
