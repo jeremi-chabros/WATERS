@@ -1,5 +1,6 @@
 function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectFramesCWT(...
-    data, fs, Wid, wname, L, Ns, multiplier, n_spikes, ttx, varargin)
+    data, fs, Wid, wname, L, Ns, multiplier, n_spikes, ttx, ...
+    minPeakThrMultiplier, maxPeakThrMultiplier, posPeakThrMultiplier)
 
 % Input:
 %
@@ -57,14 +58,14 @@ filterOrder = 3;
 [b, a] = butter(filterOrder, wn);
 filteredData = filtfilt(b, a, double(data));
 
-data = filteredData;
-
 % threshold = mad(filteredData, 1)/0.6745;
-threshold = median(abs(filteredData - mean(filteredData))) / 0.6745;  % timS: this seems faster.
+threshold = median(abs(filteredData - mean(filteredData))) / 0.6745;
+minPeakThr = -threshold * minPeakThrMultiplier;
+maxPeakThr = -threshold * maxPeakThrMultiplier;
+posPeakThr = threshold * posPeakThrMultiplier;
 
 win = 25;   % [frames]; [ms] = window/25
 
-%   If using custom wavelet:
 if strcmp(wname, 'mea') && ~ttx
     
     %   Use threshold-based spike detection to obtain the median waveform
@@ -75,7 +76,7 @@ if strcmp(wname, 'mea') && ~ttx
         disp(['Failed to obtain mean waveform']);
     end
     
-    %   Adapt a custom template from the spike waveform obtained above
+    %   Adapt custom wavelet from the waveform obtained above
     try
         customWavelet(ave_trace);
     catch
@@ -88,9 +89,8 @@ try
     
     sFr = [];
     spikeWaveforms = [];
-
-    spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
     
+    spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
     %   Align the spikes by negative peaks
     %   Post-hoc artifact removal:
     %       a) max -ve peak voltage
@@ -102,18 +102,17 @@ try
             
             %   Look into a window around the spike
             bin = filteredData(spikeFrames(i)-win:spikeFrames(i)+win);
-
+            
             %   Obtain peak voltages
             negativePeak = min(bin);
-            posPeak = max(bin);
+            positivePeak = max(bin);
             pos = find(bin == negativePeak);
             
             %   Remove the artifacts
-            if negativePeak < -threshold*2 && posPeak < threshold*4
-                sFr = [sFr (spikeFrames(i)+pos-win)];
-                spikeWaveforms = [spikeWaveforms, bin];
+            if negativePeak < minPeakThr && positivePeak < posPeakThr
+                sFr = [sFr spikeFrames(i)+pos-win];
+                spikeWaveforms = [spikeWaveforms bin];
             end
-            
         end
     end
     spikeFrames = sFr;
