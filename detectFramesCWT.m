@@ -2,13 +2,25 @@ function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectFramesCW
     data, fs, Wid, wname, L, Ns, multiplier, n_spikes, ttx, ...
     minPeakThrMultiplier, maxPeakThrMultiplier, posPeakThrMultiplier)
 
+% Description:
+%
+%   Spike detection based on continuous wavelet transform with data-driven templates
+%
+%   Core function: detect_spikes_wavelet.m
+%   Adapted from Nenadic & Burdick (2005), doi:10.1109/TBME.2004.839800
+%   Modified by JJC
+%
+%   Custom wavelet specific functions: getTemplate.m, customWavelet.m
+%   Created by JJC (2020), https://github.com/jeremi-chabros/CWT
+
+
 % Input:
 %
-%   data - 1 x n extracellular voltage trace to be analyzed
+%   data - [1 x n] (raw) extracellular voltage trace to be analyzed
 %
 %   fs - sampling frequency [Hz]
 %
-%   Wid - 1 x 2 vector of expected minimum and maximum width [ms] of
+%   Wid - [1 x 2] vector of expected minimum and maximum width [ms] of
 %         transient to be detected Wid=[Wmin Wmax]
 %         For most practical purposes Wid=[0.5 1.0]
 %
@@ -16,7 +28,7 @@ function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectFramesCW
 %       'bior1.5' - biorthogonal
 %       'bior1.3' - biorthogonal
 %       'db2'     - Daubechies
-%       'mea'     - custom wavelet (https://github.com/jeremi-chabros/CWT)
+%       'mea'     - custom data-driven wavelet (https://github.com/jeremi-chabros/CWT)
 %
 %       Note: sym2 and db2 differ only by sign --> they produce the same
 %       result
@@ -26,31 +38,38 @@ function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectFramesCW
 %       likely, smaller L --> false positives likely.
 %       For unsupervised detection, the suggested value of L is close to 0
 %
-%   Ns - (scalar): the number of scales to use in detection (Ns >= 2)
+%   Ns - [scalar] the number of scales to use in spike detection (Ns >= 2)
 %
-%   multiplier - the threshold multiplier used for detection
+%   multiplier - [scalar] the threshold multiplier used for spike detection
 %
-%   n_spikes - the number of spikes used to adapt a custom wavelet
+%   n_spikes - [scalar] the number of spikes used to adapt a custom wavelet
 %
-%   ttx - flag for the recordings with TTX added: 1 = TTX, 0 = control
+%   ttx - [logical] flag for the recordings with TTX added: 1 = TTX, 0 = control
+%
+%   minPeakThrMultiplier - [scalar] specifies the minimal spike amplitude
+%
+%   maxPeakThrMultiplier - [scalar] specifies the maximal spike amplitude
+%
+%   posPeakThrMultiplier - [scalar] specifies the maximal positive peak of the spike
 
 
 % Output:
 %
-%   spikeFrames - vector containing frames where spikes were detected (divided
-%               by fs yields spike times)
+%   spikeFrames - [1 x m] vector containing frames where spikes were detected
+%                 (divided by fs yields spike times in seconds)
 %
-%   spikeWaveforms - matrix containing spike waveforms
+%   spikeWaveforms - [51 x m] matrix containing spike waveforms
+%                    (51 comes from sampling frequency and corresponds to
+%                     spike Frame +/-1 ms)
 %
-%   filteredData - filtered trace
+%   filteredData - [1 x n] filtered extracellular voltage trace
 %
-%   threshold - median absolute deviation of the voltage amplitudes in
-%   trace
+%   threshold - voltage amplitude used in the initial spike detection step
 
 
 refPeriod_ms = 2;
 
-%  Filter signal
+%   Filter signal
 lowpass = 600;
 highpass = 8000;
 wn = [lowpass highpass] / (fs / 2);
@@ -58,7 +77,7 @@ filterOrder = 3;
 [b, a] = butter(filterOrder, wn);
 filteredData = filtfilt(b, a, double(data));
 
-% threshold = mad(filteredData, 1)/0.6745;
+%   Set thresholds
 threshold = median(abs(filteredData - mean(filteredData))) / 0.6745;
 minPeakThr = -threshold * minPeakThrMultiplier;
 maxPeakThr = -threshold * maxPeakThrMultiplier;
@@ -71,7 +90,7 @@ if strcmp(wname, 'mea') && ~ttx
     %   Use threshold-based spike detection to obtain the median waveform
     %   from n_spikes
     try
-        [ave_trace, ~] = getTemplate(data, multiplier, refPeriod_ms, n_spikes);
+        [ave_trace, ~] = getTemplate(filteredData, multiplier, refPeriod_ms, n_spikes);
     catch
         disp(['Failed to obtain mean waveform']);
     end
@@ -91,6 +110,7 @@ try
     spikeWaveforms = [];
     
     spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
+    
     %   Align the spikes by negative peaks
     %   Post-hoc artifact removal:
     %       a) max -ve peak voltage
@@ -110,8 +130,10 @@ try
             
             %   Remove the artifacts
             if negativePeak < minPeakThr && positivePeak < posPeakThr
-                sFr = [sFr spikeFrames(i)+pos-win];
-                spikeWaveforms = [spikeWaveforms bin];
+                newSpikeFrame = spikeFrames(i)+pos-win;
+                shape = filteredData(newSpikeFrame-25:newSpikeFrame+25);
+                sFr = [sFr newSpikeFrame];
+                spikeWaveforms = [spikeWaveforms shape];
             end
         end
     end

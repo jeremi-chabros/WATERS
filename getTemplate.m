@@ -1,6 +1,7 @@
-function [ave_trace, spikeTrain, spikes2use] = getTemplate(data, multiplier, refPeriod_ms, n_spikes_to_plot)
+function [ave_trace, spikeTrain] = getTemplate(data, multiplier, refPeriod_ms, n_spikes_to_plot)
 
-[spikeTrain, finalData, ~] = detectSpikes(data, multiplier, refPeriod_ms);
+[spikeTrain, ~, ~] = detectSpikes(data, multiplier, refPeriod_ms);
+
 
 sp_times = find(spikeTrain == 1);
 
@@ -11,14 +12,18 @@ if  sum(spikeTrain) < n_spikes_to_plot
 end
 
 % Pick n_spikes at random (previously the initial 200 spikes were used)
-spikes2use = randi([5, length(sp_times)-5], 1, n_spikes_to_plot);
+% spikes2use = randi([5, length(sp_times)-5], 1, n_spikes_to_plot);
+
+% Pick n_spikes uniformly
+spikes2use = round(linspace(2, length(sp_times)-2, n_spikes_to_plot));
+
 
 
 for i = 1:n_spikes_to_plot
     n = sp_times(spikes2use(i));
-    bin = finalData(n-10:n+10);
+    bin = data(n-10:n+10);
     sp_peak_time = find(bin == min(bin))-11; % 11 = middle sample in bin 
-    all_trace(:,i) = finalData(n+sp_peak_time-25:n+sp_peak_time+25);
+    all_trace(:,i) = data(n+sp_peak_time-25:n+sp_peak_time+25);
 end
 
 try

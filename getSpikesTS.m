@@ -1,5 +1,7 @@
 function getSpikesTS(dataPath, savePath, varargin)
 
+addpath(dataPath)
+
 % Load parameters
 if ~exist(varargin, 'var')
     load('params.mat');
@@ -28,9 +30,9 @@ end
 %%
 
 % Get files
-files = dir([dataPath '*PAT*.mat']);
+files = dir([dataPath '*DIV170002*.mat']);
 
-for recording = 1:1
+for recording = 1:numel(files)
     
     progressbar(['File: ' num2str(recording) '/' num2str(numel(files))]);
     fileName = files(recording).name;

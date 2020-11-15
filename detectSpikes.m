@@ -12,23 +12,28 @@ function [spikeTrain, finalData, threshold] = ...
 fs = 25000;
 
 % Filtering
-lowpass = 600;
-highpass = 8000;
-wn = [lowpass highpass] / (fs / 2);
-filterOrder = 3;
-[b, a] = butter(filterOrder, wn);
-filteredData = filtfilt(b, a, double(data));
+% lowpass = 600;
+% highpass = 8000;
+% wn = [lowpass highpass] / (fs / 2);
+% filterOrder = 3;
+% [b, a] = butter(filterOrder, wn);
+% data = filtfilt(b, a, double(data));
+
+% JJC 2020/11/14: Removed redundant filtering as it is alredy done in detectFramesCWT.m
+% Uncomment if want to use threshold spike detection on its own
 
 % Calculate the threshold (median absolute deviation)
 % See: https://en.wikipedia.org/wiki/Median_absolute_deviation
-s = (mad(filteredData, 1)/0.6745);
-m = mean(filteredData);
+s = (mad(data, 1)/0.6745); % Faster than mad(X,1);
+m = mean(data);
 threshold = m - multiplier*s;
 
 % Detect spikes (defined as threshold crossings)
-spikeTrain = filteredData < threshold;
+spikeTrain = zeros(size(data));
+spikeTrain = data < threshold;
 spikeTrain = double(spikeTrain);
-finalData = filteredData;
+% finalData = data;
+finalData = [];
 
 % Impose the refractory period (ms)
 refPeriod = refPeriod_ms * 10^-3 * fs;
