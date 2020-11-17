@@ -2,38 +2,93 @@ classdef setParams < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
-        UIFigure                  matlab.ui.Figure
-        Wid_minEditFieldLabel     matlab.ui.control.Label
-        Wid_minEditField          matlab.ui.control.NumericEditField
-        LEditFieldLabel           matlab.ui.control.Label
-        LEditField                matlab.ui.control.NumericEditField
-        NsEditFieldLabel          matlab.ui.control.Label
-        NsEditField               matlab.ui.control.NumericEditField
-        multiplierEditFieldLabel  matlab.ui.control.Label
-        multiplierEditField       matlab.ui.control.NumericEditField
-        n_spikesEditFieldLabel    matlab.ui.control.Label
-        n_spikesEditField         matlab.ui.control.NumericEditField
-        SaveButton                matlab.ui.control.Button
-        Wid_maxEditFieldLabel     matlab.ui.control.Label
-        Wid_maxEditField          matlab.ui.control.NumericEditField
+        UIFigure                        matlab.ui.Figure
+        SaveButton                      matlab.ui.control.Button
+        MultiplierEditFieldLabel        matlab.ui.control.Label
+        MultiplierEditField             matlab.ui.control.NumericEditField
+        NospikesEditFieldLabel          matlab.ui.control.Label
+        NospikesEditField               matlab.ui.control.NumericEditField
+        NoscalesEditFieldLabel          matlab.ui.control.Label
+        NoscalesEditField               matlab.ui.control.NumericEditField
+        WidthmsEditFieldLabel           matlab.ui.control.Label
+        WidthmsEditField                matlab.ui.control.EditField
+        GroundedEditFieldLabel          matlab.ui.control.Label
+        GroundedEditField               matlab.ui.control.EditField
+        CostparametersEditFieldLabel    matlab.ui.control.Label
+        CostparametersEditField         matlab.ui.control.EditField
+        WaveletsEditFieldLabel          matlab.ui.control.Label
+        WaveletsEditField               matlab.ui.control.EditField
+        SubsamplingEditFieldLabel       matlab.ui.control.Label
+        SubsamplingEditField            matlab.ui.control.EditField
+        MinvethresholdEditFieldLabel    matlab.ui.control.Label
+        MinvethresholdEditField         matlab.ui.control.NumericEditField
+        MaxvethresholdEditField_2Label  matlab.ui.control.Label
+        MaxvethresholdEditField_2       matlab.ui.control.NumericEditField
+        MaxvethresholdEditFieldLabel    matlab.ui.control.Label
+        MaxvethresholdEditField         matlab.ui.control.NumericEditField
     end
+
+    
+    properties (Access = private)
+    end
+    
+    methods (Access = private)
+        
+        function r = list2mat(app, str, flag)
+            str = strrep(str, ' ', '');
+            str = split(str, ',');
+            if flag
+                for i = 1:numel(str)
+                    r(i) = str2num(str{i});
+                end
+            else
+                r = str;
+            end
+        end
+    end
+    
 
     % Callbacks that handle component events
     methods (Access = private)
 
+        % Callback function
+        function WidthmsEditFieldValueChanged(app, event)
+            
+        end
+
         % Button pushed function: SaveButton
         function SaveButtonPushed(app, event)
-params = struct;
-Wid_min = app.Wid_minEditField.Value;
-Wid_max = app.Wid_maxEditField.Value;
-Wid = [Wid_min Wid_max];
-params.Wid = Wid;
-params.L = app.LEditField.Value;
-params.Ns = app.NsEditField.Value;
-params.n_spikes = app.n_spikesEditField.Value;
-params.multiplier = app.multiplierEditField.Value;
-save('params.mat','-struct','params');
-delete(app.UIFigure)
+            
+            params = struct();
+            params.multiplier = app.MultiplierEditField.Value;
+            params.nSpikes = app.NospikesEditField.Value;
+            params.nScales = app.NoscalesEditField.Value;
+            
+            wid = app.WidthmsEditField.Value;
+            params.wid = list2mat(app, wid, 1);
+            
+            
+            if app.GroundedEditField.Value
+                grd = app.GroundedEditField.Value;
+                params.grd = list2mat(app, grd, 1);
+            end
+            
+            costList = app.CostparametersEditField.Value;
+            params.costList = list2mat(app, costList, 1);
+            
+            wnameList = app.WaveletsEditField.Value;
+            params.wnameList = list2mat(app, wnameList, 0);
+            
+            if app.SubsamplingEditField.Value
+                subsample_time = app.SubsamplingEditField.Value;
+                params.subsample_time = list2mat(app, subsample_time, 1);
+            end
+            
+            params.minPeakThrMultiplier = app.MinvethresholdEditField.Value;
+            params.maxPeakThrMultiplier = app.MaxvethresholdEditField.Value;
+            params.posPeakThrMultiplier = app.MaxvethresholdEditField_2.Value;
+            save('params.mat', 'params');
+            delete(app);
         end
     end
 
@@ -45,79 +100,141 @@ delete(app.UIFigure)
 
             % Create UIFigure and hide until all components are created
             app.UIFigure = uifigure('Visible', 'off');
-            app.UIFigure.Position = [500 300 226 299];
-            app.UIFigure.Name = 'Parameters:';
-
-            % Create Wid_minEditFieldLabel
-            app.Wid_minEditFieldLabel = uilabel(app.UIFigure);
-            app.Wid_minEditFieldLabel.HorizontalAlignment = 'right';
-            app.Wid_minEditFieldLabel.Position = [25 248 52 22];
-            app.Wid_minEditFieldLabel.Text = 'Wid_min';
-
-            % Create Wid_minEditField
-            app.Wid_minEditField = uieditfield(app.UIFigure, 'numeric');
-            app.Wid_minEditField.Position = [92 248 100 22];
-            app.Wid_minEditField.Value = 0.5;
-
-            % Create LEditFieldLabel
-            app.LEditFieldLabel = uilabel(app.UIFigure);
-            app.LEditFieldLabel.HorizontalAlignment = 'right';
-            app.LEditFieldLabel.Position = [51 188 25 22];
-            app.LEditFieldLabel.Text = 'L';
-
-            % Create LEditField
-            app.LEditField = uieditfield(app.UIFigure, 'numeric');
-            app.LEditField.Position = [91 188 100 22];
-
-            % Create NsEditFieldLabel
-            app.NsEditFieldLabel = uilabel(app.UIFigure);
-            app.NsEditFieldLabel.HorizontalAlignment = 'right';
-            app.NsEditFieldLabel.Position = [51 158 25 22];
-            app.NsEditFieldLabel.Text = 'Ns';
-
-            % Create NsEditField
-            app.NsEditField = uieditfield(app.UIFigure, 'numeric');
-            app.NsEditField.Position = [91 158 100 22];
-            app.NsEditField.Value = 5;
-
-            % Create multiplierEditFieldLabel
-            app.multiplierEditFieldLabel = uilabel(app.UIFigure);
-            app.multiplierEditFieldLabel.HorizontalAlignment = 'right';
-            app.multiplierEditFieldLabel.Position = [21 128 54 22];
-            app.multiplierEditFieldLabel.Text = 'multiplier';
-
-            % Create multiplierEditField
-            app.multiplierEditField = uieditfield(app.UIFigure, 'numeric');
-            app.multiplierEditField.Position = [90 128 100 22];
-            app.multiplierEditField.Value = 3.5;
-
-            % Create n_spikesEditFieldLabel
-            app.n_spikesEditFieldLabel = uilabel(app.UIFigure);
-            app.n_spikesEditFieldLabel.HorizontalAlignment = 'right';
-            app.n_spikesEditFieldLabel.Position = [21 98 53 22];
-            app.n_spikesEditFieldLabel.Text = 'n_spikes';
-
-            % Create n_spikesEditField
-            app.n_spikesEditField = uieditfield(app.UIFigure, 'numeric');
-            app.n_spikesEditField.Position = [89 98 100 22];
-            app.n_spikesEditField.Value = 200;
+            app.UIFigure.Position = [550 200 290 435];
+            app.UIFigure.Name = 'Set spike detection parameters';
 
             % Create SaveButton
             app.SaveButton = uibutton(app.UIFigure, 'push');
             app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
-            app.SaveButton.Position = [89 31 100 22];
+            app.SaveButton.Position = [144 24 100 22];
             app.SaveButton.Text = 'Save';
 
-            % Create Wid_maxEditFieldLabel
-            app.Wid_maxEditFieldLabel = uilabel(app.UIFigure);
-            app.Wid_maxEditFieldLabel.HorizontalAlignment = 'right';
-            app.Wid_maxEditFieldLabel.Position = [22 218 55 22];
-            app.Wid_maxEditFieldLabel.Text = 'Wid_max';
+            % Create MultiplierEditFieldLabel
+            app.MultiplierEditFieldLabel = uilabel(app.UIFigure);
+            app.MultiplierEditFieldLabel.HorizontalAlignment = 'right';
+            app.MultiplierEditFieldLabel.Position = [74 403 55 22];
+            app.MultiplierEditFieldLabel.Text = 'Multiplier';
 
-            % Create Wid_maxEditField
-            app.Wid_maxEditField = uieditfield(app.UIFigure, 'numeric');
-            app.Wid_maxEditField.Position = [92 218 100 22];
-            app.Wid_maxEditField.Value = 1;
+            % Create MultiplierEditField
+            app.MultiplierEditField = uieditfield(app.UIFigure, 'numeric');
+            app.MultiplierEditField.Limits = [3 5];
+            app.MultiplierEditField.Position = [144 403 100 22];
+            app.MultiplierEditField.Value = 3.5;
+
+            % Create NospikesEditFieldLabel
+            app.NospikesEditFieldLabel = uilabel(app.UIFigure);
+            app.NospikesEditFieldLabel.HorizontalAlignment = 'right';
+            app.NospikesEditFieldLabel.Position = [67 369 62 22];
+            app.NospikesEditFieldLabel.Text = 'No. spikes';
+
+            % Create NospikesEditField
+            app.NospikesEditField = uieditfield(app.UIFigure, 'numeric');
+            app.NospikesEditField.Limits = [50 1000];
+            app.NospikesEditField.Position = [144 369 100 22];
+            app.NospikesEditField.Value = 200;
+
+            % Create NoscalesEditFieldLabel
+            app.NoscalesEditFieldLabel = uilabel(app.UIFigure);
+            app.NoscalesEditFieldLabel.HorizontalAlignment = 'right';
+            app.NoscalesEditFieldLabel.Position = [67 335 62 22];
+            app.NoscalesEditFieldLabel.Text = 'No. scales';
+
+            % Create NoscalesEditField
+            app.NoscalesEditField = uieditfield(app.UIFigure, 'numeric');
+            app.NoscalesEditField.Limits = [3 6];
+            app.NoscalesEditField.Position = [144 335 100 22];
+            app.NoscalesEditField.Value = 5;
+
+            % Create WidthmsEditFieldLabel
+            app.WidthmsEditFieldLabel = uilabel(app.UIFigure);
+            app.WidthmsEditFieldLabel.HorizontalAlignment = 'right';
+            app.WidthmsEditFieldLabel.Position = [66 301 63 22];
+            app.WidthmsEditFieldLabel.Text = 'Width [ms]';
+
+            % Create WidthmsEditField
+            app.WidthmsEditField = uieditfield(app.UIFigure, 'text');
+            app.WidthmsEditField.HorizontalAlignment = 'right';
+            app.WidthmsEditField.Position = [144 301 100 22];
+            app.WidthmsEditField.Value = '0.5, 1';
+
+            % Create GroundedEditFieldLabel
+            app.GroundedEditFieldLabel = uilabel(app.UIFigure);
+            app.GroundedEditFieldLabel.HorizontalAlignment = 'right';
+            app.GroundedEditFieldLabel.Position = [70 267 59 22];
+            app.GroundedEditFieldLabel.Text = 'Grounded';
+
+            % Create GroundedEditField
+            app.GroundedEditField = uieditfield(app.UIFigure, 'text');
+            app.GroundedEditField.HorizontalAlignment = 'right';
+            app.GroundedEditField.Position = [144 267 100 22];
+
+            % Create CostparametersEditFieldLabel
+            app.CostparametersEditFieldLabel = uilabel(app.UIFigure);
+            app.CostparametersEditFieldLabel.HorizontalAlignment = 'right';
+            app.CostparametersEditFieldLabel.Position = [34 233 95 22];
+            app.CostparametersEditFieldLabel.Text = 'Cost parameters';
+
+            % Create CostparametersEditField
+            app.CostparametersEditField = uieditfield(app.UIFigure, 'text');
+            app.CostparametersEditField.HorizontalAlignment = 'right';
+            app.CostparametersEditField.Position = [144 233 100 22];
+            app.CostparametersEditField.Value = '0';
+
+            % Create WaveletsEditFieldLabel
+            app.WaveletsEditFieldLabel = uilabel(app.UIFigure);
+            app.WaveletsEditFieldLabel.HorizontalAlignment = 'right';
+            app.WaveletsEditFieldLabel.Position = [75 199 54 22];
+            app.WaveletsEditFieldLabel.Text = 'Wavelets';
+
+            % Create WaveletsEditField
+            app.WaveletsEditField = uieditfield(app.UIFigure, 'text');
+            app.WaveletsEditField.HorizontalAlignment = 'right';
+            app.WaveletsEditField.Position = [144 199 100 22];
+            app.WaveletsEditField.Value = 'mea';
+
+            % Create SubsamplingEditFieldLabel
+            app.SubsamplingEditFieldLabel = uilabel(app.UIFigure);
+            app.SubsamplingEditFieldLabel.HorizontalAlignment = 'right';
+            app.SubsamplingEditFieldLabel.Position = [53 166 76 22];
+            app.SubsamplingEditFieldLabel.Text = 'Subsampling';
+
+            % Create SubsamplingEditField
+            app.SubsamplingEditField = uieditfield(app.UIFigure, 'text');
+            app.SubsamplingEditField.HorizontalAlignment = 'right';
+            app.SubsamplingEditField.Position = [144 166 100 22];
+
+            % Create MinvethresholdEditFieldLabel
+            app.MinvethresholdEditFieldLabel = uilabel(app.UIFigure);
+            app.MinvethresholdEditFieldLabel.HorizontalAlignment = 'right';
+            app.MinvethresholdEditFieldLabel.Position = [30 133 99 22];
+            app.MinvethresholdEditFieldLabel.Text = 'Min -ve threshold';
+
+            % Create MinvethresholdEditField
+            app.MinvethresholdEditField = uieditfield(app.UIFigure, 'numeric');
+            app.MinvethresholdEditField.Position = [144 133 100 22];
+            app.MinvethresholdEditField.Value = 2;
+
+            % Create MaxvethresholdEditField_2Label
+            app.MaxvethresholdEditField_2Label = uilabel(app.UIFigure);
+            app.MaxvethresholdEditField_2Label.HorizontalAlignment = 'right';
+            app.MaxvethresholdEditField_2Label.Position = [20 100 102 22];
+            app.MaxvethresholdEditField_2Label.Text = 'Max -ve threshold';
+
+            % Create MaxvethresholdEditField_2
+            app.MaxvethresholdEditField_2 = uieditfield(app.UIFigure, 'numeric');
+            app.MaxvethresholdEditField_2.Position = [144 100 100 22];
+            app.MaxvethresholdEditField_2.Value = 10;
+
+            % Create MaxvethresholdEditFieldLabel
+            app.MaxvethresholdEditFieldLabel = uilabel(app.UIFigure);
+            app.MaxvethresholdEditFieldLabel.HorizontalAlignment = 'right';
+            app.MaxvethresholdEditFieldLabel.Position = [17 67 105 22];
+            app.MaxvethresholdEditFieldLabel.Text = 'Max +ve threshold';
+
+            % Create MaxvethresholdEditField
+            app.MaxvethresholdEditField = uieditfield(app.UIFigure, 'numeric');
+            app.MaxvethresholdEditField.Position = [144 67 100 22];
+            app.MaxvethresholdEditField.Value = 5;
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
