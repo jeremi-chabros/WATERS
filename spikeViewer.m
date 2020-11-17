@@ -84,7 +84,7 @@ classdef spikeViewer < matlab.apps.AppBase
             plot(app.traceAx, app.trace(st:en), 'k');
             
             xlim(app.traceAx, [1 (app.binMs*25+1)]);
-            ylim(app.traceAx, [-app.stdTrace*7 app.stdTrace*5]);
+            ylim(app.traceAx, [-app.stdTrace*7 app.yOffset+3]);
             
             ylabel(app.traceAx, ['Voltage (' char(956) 'V)']);
             set(app.traceAx, ...

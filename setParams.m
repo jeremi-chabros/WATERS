@@ -71,6 +71,8 @@ classdef setParams < matlab.apps.AppBase
             if app.GroundedEditField.Value
                 grd = app.GroundedEditField.Value;
                 params.grd = list2mat(app, grd, 1);
+            else
+                params.grd = [];
             end
             
             costList = app.CostparametersEditField.Value;

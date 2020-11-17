@@ -22,10 +22,7 @@ posPeakThrMultiplier = params.posPeakThrMultiplier;
 
 %% Truncate recording
 if isfield(params, 'subsample_time')
-    if ~isempty(params.subsample_time)
-        start_frame = params.subsample_time(1) * 25000;
-        end_frame = params.subsample_time(2) * 25000;
-    end
+    
 end
 %%
 
@@ -42,14 +39,20 @@ for recording = 1:numel(files)
     file = load(fileName);
     disp(['File loaded']);
     data = file.dat;
-    
-    if isfield(params, 'subsample_time')
-        data = data(start_frame:end_frame, :);
-    end
-    
     channels = file.channels;
     fs = file.fs;
     ttx = contains(fileName, 'TTX');
+    
+    if isfield(params, 'subsample_time')
+        if ~isempty(params.subsample_time)
+            start_frame = params.subsample_time(1) * fs;
+            end_frame = params.subsample_time(2) * fs;
+        end
+        data = data(start_frame:end_frame, :);
+        params.duration = length(data)/fs;
+    end
+    
+    
     
     for L = costList
         params.L = L;
@@ -92,7 +95,7 @@ for recording = 1:numel(files)
             % traces(channel, :) = filtTrace;
             spikeTimes{channel} = spikeStruct;
             spikeWaveforms{channel} = waveStruct;
-
+            
         end
         
         toc
@@ -113,4 +116,6 @@ for recording = 1:numel(files)
             'spikeWaveforms'};
         save(saveName, varsList{:}, '-v7.3');
     end
+end
+progressbar(1);
 end
