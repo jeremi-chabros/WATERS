@@ -34,11 +34,7 @@ Spike Overlay              | Average waveform          | Adapted wavelet
 :-------------------------:|:-------------------------:|:-------------------------:
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true)  |  ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/aveSpike.png?raw=true) | ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/adaptedWavelet.png?raw=true)
 
-
-
-
-
-
+4. Run spike detection scaling the custom wavelet across scales
 
 ![Wavelet across scales](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/testAnimated.gif?raw=true)
 
