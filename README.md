@@ -30,6 +30,8 @@ This allows for a more robust spike detection that accounts for the physiologica
 
 3. Using the aggregated median spike waveform adapt a custom wavelet.
 <img align="left" width="300" height="450" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true">
+<img align="center" width="300" height="450" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/aveSpike.png?raw=true">
+
 
 
 
