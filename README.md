@@ -53,45 +53,27 @@ Spike Overlay              | Average waveform          | Adapted wavelet
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/uniqueSpikes.png?raw=true)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## Installation
 
-Use git:
+Clone git repository:
 
 ``
 git clone https://github.com/jeremi-chabros/CWT.git
 ``
 
+Requires MATLAB with Wavelet Toolbox and Signal Processing Toolbox.
+
+
 ## Usage
 
-```python
-import foobar
 
-foobar.pluralize('word') # returns 'words'
-foobar.pluralize('goose') # returns 'geese'
-foobar.singularize('phenomena') # returns 'phenomenon'
-```
+Within MATLAB Command Window
+1. `setParams();` – set spike detection parameters
+2. `dataPath = [/path/to/dataFolder '/'];` – set path to folder with data
+3. `savePath = [/path/to/saveFolder '/'];` – set path to output folder
+4. `getSpikesTS(dataPath, savePath);` – run spike detection
 
-## Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-Please make sure to update tests as appropriate.
+Note: sometimes `addpath(dataPath)` might be required
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
