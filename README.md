@@ -30,14 +30,9 @@ This allows for a more robust spike detection that accounts for the physiologica
 
 3. Using the aggregated median spike waveform adapt a custom wavelet.
 
-Solarized dark             |  Solarized Ocean
-:-------------------------:|:-------------------------:
-![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true)  |  ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/aveSpike.png?raw=true)
-
-
-<img align="left" width="200" height="430" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true">
-<img align="center" width="200" height="430" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/aveSpike.png?raw=true">
-<img align="right" width="200" height="430" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/adaptedWavelet.png?raw=true">
+Spike Overlay              | Average waveform          | Adapted wavelet
+:-------------------------:|:-------------------------:|:-------------------------:
+![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true)  |  ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/aveSpike.png?raw=true) | ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/adaptedWavelet.png?raw=true)
 
 
 
