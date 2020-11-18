@@ -29,10 +29,37 @@ This allows for a more robust spike detection that accounts for the physiologica
 ![Threshold-based detection results](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdSpikes.png?raw=true)
 
 3. Using the aggregated median spike waveform adapt a custom wavelet.
-![Spike overlay](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true)<img align="left" width="100" height="100" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/testAnimated.gif?raw=true">
+![Spike overlay](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true <img align="left" width="100" height="100" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true">
+
+
+
+
 
 
 ![Wavelet across scales](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/testAnimated.gif?raw=true)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## Installation
@@ -42,3 +69,21 @@ Use git:
 ``
 git clone https://github.com/jeremi-chabros/CWT.git
 ``
+
+## Usage
+
+```python
+import foobar
+
+foobar.pluralize('word') # returns 'words'
+foobar.pluralize('goose') # returns 'geese'
+foobar.singularize('phenomena') # returns 'phenomenon'
+```
+
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
+
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
