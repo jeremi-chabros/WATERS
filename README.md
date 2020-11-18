@@ -29,9 +29,9 @@ This allows for a more robust spike detection that accounts for the physiologica
 ![Threshold-based detection results](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdSpikes.png?raw=true)
 
 3. Using the aggregated median spike waveform adapt a custom wavelet.
-<img align="left" width="300" height="450" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true">
-<img align="center" width="300" height="450" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/aveSpike.png?raw=true">
-<img align="right" width="300" height="450" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/adaptedWavelet.png?raw=true">
+<img align="left" width="270" height="430" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true">
+<img align="center" width="270" height="430" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/aveSpike.png?raw=true">
+<img align="right" width="270" height="430" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/adaptedWavelet.png?raw=true">
 
 
 
