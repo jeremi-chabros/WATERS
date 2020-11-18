@@ -2,7 +2,9 @@
 
 Spike detection based on continuous wavelet transform with data-driven templates
 
-
+<p align="center">
+  <img width="750" height="500" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/testAnimated.gif?raw=true">
+</p>
 
 ## Description
 
@@ -35,10 +37,6 @@ Spike Overlay              | Average waveform          | Adapted wavelet
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true)  |  ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/aveSpike.png?raw=true) | ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/adaptedWavelet.png?raw=true)
 
 4. Run spike detection scaling the custom wavelet across scales
-
-<p align="center">
-  <img width="750" height="500" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/testAnimated.gif?raw=true">
-</p>
 
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/cwtInner1.png?raw=true)
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/cwtInner2.png?raw=true)
