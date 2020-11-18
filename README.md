@@ -38,6 +38,8 @@ Spike Overlay              | Average waveform          | Adapted wavelet
 
 ![Wavelet across scales](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/testAnimated.gif?raw=true)
 
+<img align="center" width="900" height="600" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/testAnimated.gif?raw=true">
+
 
 
 
