@@ -40,9 +40,7 @@ Spike Overlay              | Average waveform          | Adapted wavelet
 
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/cwtInner1.png?raw=true)
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/cwtInner2.png?raw=true)
-
-
-
+![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/meaSpikes.png?raw=true)
 
 
 
