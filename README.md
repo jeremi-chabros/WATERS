@@ -50,6 +50,8 @@ Spike Overlay              | Average waveform          | Adapted wavelet
   <img width="665" height="500" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/spikesHeatmap.png?raw=true">
 </p>
 
+![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/uniqueSpikes.png?raw=true)
+
 
 
 
