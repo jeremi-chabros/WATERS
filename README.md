@@ -1,6 +1,6 @@
 # CuTe 
 
-Spike detection based on continuous wavelet transform with data-driven templates
+Spike detection based on continuous wavelet transform with data-driven templates.
 
 <p align="center">
   <img width="750" height="500" src="https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/testAnimated.gif?raw=true">
@@ -17,14 +17,14 @@ doi:10.1109/TBME.2004.839800
 
 Through adapting custom wavelets based on spike waveforms, it creates a family of templates that are then scaled:
 
-1. Horizontally in time domain
-2. Vertically in voltage (amplitude) domain
+1. Horizontally in time domain,
+2. Vertically in voltage (amplitude) domain.
 
 This allows for a more robust spike detection that accounts for the physiological spike waveforms (as opposed to abstract wavelets).
 
 ## Spike detection pipeline
 
-1. Filter the raw voltage trace (3rd order Butterworth, 600 Hz - 8 kHz)
+1. Filter the raw voltage trace (3rd order Butterworth, 600 Hz - 8 kHz).
 ![Filtered trace](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/filteredTrace.png?raw=true)
 
 2. Using threshold-based method detect `n ∈ [50, 1000]` spikes.
@@ -36,13 +36,16 @@ Spike Overlay              | Average waveform          | Adapted wavelet
 :-------------------------:|:-------------------------:|:-------------------------:
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/thresholdOverlay.png?raw=true)  |  ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/aveSpike.png?raw=true) | ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/adaptedWavelet.png?raw=true)
 
-4. Run spike detection scaling the custom wavelet across scales
+4. Run spike detection scaling the custom wavelet across scales.
 
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/cwtInner1.png?raw=true)
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/cwtInner2.png?raw=true)
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/meaSpikes.png?raw=true)
 
+5. Compare with threshold-based method and built-in wavelets from MATLAB Wavelet Toolbox.
 
+![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/movingAve.png?raw=true)
+![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/spikesHeatmap.png?raw=true)
 
 
 
