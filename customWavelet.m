@@ -6,7 +6,7 @@ template = ave_trace;
 template = spline(1:length(template), template, linspace(1, length(template), 100));
 
 % Gaussian smoothing
-w = gausswin(15);
+w = gausswin(7);
 y = filter(w,1,template);
 y = rescale(y);
 y = y - mean(y);

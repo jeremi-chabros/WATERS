@@ -140,7 +140,7 @@ if PltFlg == 1
     temp = zeros(1,Nt);
     temp(TE) = 1;
     image(flipud(abs(c)) .* scale)
-    colormap pink
+    colormap hsv
     ylabel('Scales')
     Wt = [fliplr(W)];
     set(gca,'YTick',1:Ns,'YTickLabel',Wt,'Position',[0.1 0.2 0.8 0.6], ...
@@ -148,19 +148,21 @@ if PltFlg == 1
     title(['|C| across scales: ' num2str(W)])
     ah2 = axes;
     set(ah2,'Position',[0.1 0.1 0.8 0.1])
-    plot(temp,'o-m','MarkerSize',4,'MarkerFaceColor','m')
+    plot(temp,'o-m','MarkerSize',3,'MarkerFaceColor','m')
     set(gca,'YTick',[],'XLim',[1 Nt])
     xlabel('Time (samples)')
     ylabel('Spikes')
+    set(gcf, 'Position', [200 300 1200 200]);
     
     figure(2)
-    plot(Signal,'Color',[0.7 0.7 0.7],'LineWidth',2)
+    plot(Signal,'Color',[0.5 0.5 0.5],'LineWidth', 1)
     hold on
-    plot(ct','-o','LineWidth',1,'MarkerFaceColor','k', ...
+    plot(ct','-o','LineWidth',0.5,'MarkerFaceColor','k', ...
         'MarkerSize',4)
-    xlabel('Time (samples)')
+%     xlabel('Time (samples)')
     ylabel('Coefficients')
-    set(gca,'XLim',[1 Nt])
+    set(gca,'XLim',[1 Nt], 'xcolor','none')
+    set(gcf, 'Position', [200 300 1200 200]);
 end
 
 if CmtFlg == 1
