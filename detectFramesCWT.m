@@ -67,7 +67,7 @@ function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectFramesCW
 %   threshold - voltage amplitude used in the initial spike detection step
 
 
-refPeriod_ms = 2;
+refPeriod_ms = 2; % Only used by the initial threshold method
 
 %   Filter signal
 lowpass = 600;
