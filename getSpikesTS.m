@@ -30,7 +30,7 @@ posPeakThrMultiplier = params.posPeakThrMultiplier;
 % Get files
 % Modify the '*string*.mat' wildcard to include subset of recordings
 
-files = dir([dataPath '*DIV170002*.mat']);
+files = dir([dataPath '*slice1*.mat']);
 
 for recording = 1:numel(files)
     
@@ -59,10 +59,12 @@ for recording = 1:numel(files)
         params.duration = length(data)/fs;
     end
     
-    saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
     
-    if ~exist(saveName, 'file');
+    
+
         for L = costList
+            saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
+                if ~exist(saveName, 'file');
             params.L = L;
             tic
             disp('Detecting spikes...');
