@@ -69,8 +69,8 @@ Requires MATLAB with Wavelet Toolbox and Signal Processing Toolbox.
 
 Within MATLAB Command Window
 1. `setParams();` – set spike detection parameters (overwrites the params.mat file that contains structure `params` with the spike detection parameters\
-or 
-1. Manually set the parameters using the `setParameters.m` file
+or\
+Manually set the parameters using the `setParameters.m` file
 2. `dataPath = [/path/to/dataFolder '/'];` – set path to folder with data
 3. `savePath = [/path/to/saveFolder '/'];` – set path to output folder
 4. `getSpikesTS(dataPath, savePath);` – run spike detection
