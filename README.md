@@ -73,11 +73,13 @@ or\
 Manually set the parameters using the `setParameters.m` file
 2. `dataPath = [/path/to/dataFolder '/'];` – set path to folder with data
 3. `savePath = [/path/to/saveFolder '/'];` – set path to output folder
-4. `getSpikesTS(dataPath, savePath);` – run spike detection
+4. `getSpikesTS(dataPath, savePath);` – this is the main analysis function
 
 Note: sometimes `addpath(dataPath)` might be required
 
->This method is still under development and troubleshooting and hence frequent `git pull` is recommended.
+> This method is still under development and troubleshooting and hence frequent `git pull` is recommended:
+> `git stash -A`
+> `git pull`
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
