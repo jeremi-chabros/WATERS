@@ -77,9 +77,9 @@ Manually set the parameters using the `setParameters.m` file
 
 Note: sometimes `addpath(dataPath)` might be required
 
-> This method is still under development and troubleshooting and hence frequent `git pull` is recommended:
-> `git stash -A`
-> `git pull`
+> This method is still under development and troubleshooting and hence frequent `git pull` is recommended:\
+> `git stash -A`\
+> `git pull`\
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
