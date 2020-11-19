@@ -6,7 +6,7 @@ template = ave_trace;
 template = spline(1:length(template), template, linspace(1, length(template), 100));
 
 % Gaussian smoothing
-w = gausswin(7);
+w = gausswin(10);
 y = filter(w,1,template);
 y = rescale(y);
 y = y - mean(y);
@@ -18,7 +18,7 @@ signal = zeros(1, 110);
 signal(6:105) = y;
 
 % Adapt the wavelet
-[Y,X,nc] = pat2cwav(signal, 'orthconst', 0, 'none') ;
+[Y,X,~] = pat2cwav(signal, 'orthconst', 0, 'none') ;
 
 % Test if a legitmate wavelet
 dxval = max(diff(X));

@@ -1,8 +1,13 @@
 function getSpikesTS(dataPath, savePath, varargin)
 
+% Master script for spike detection
+% See: https://github.com/jeremi-chabros/CWT
+% Author: JJC 2020/11
+
 addpath(dataPath)
 
 % Load parameters
+
 if ~exist(varargin, 'var')
     load('params.mat');
 else
@@ -20,29 +25,31 @@ minPeakThrMultiplier = params.minPeakThrMultiplier;
 maxPeakThrMultiplier = params.maxPeakThrMultiplier;
 posPeakThrMultiplier = params.posPeakThrMultiplier;
 
-%% Truncate recording
-if isfield(params, 'subsample_time')
-    
-end
 %%
 
 % Get files
+% Modify the '*string*.mat' wildcard to include subset of recordings
+
 files = dir([dataPath '*DIV170002*.mat']);
 
 for recording = 1:numel(files)
     
     progressbar(['File: ' num2str(recording) '/' num2str(numel(files))]);
+    progressbar(recording/numel(files));
     fileName = files(recording).name;
     
     % Load data
     disp(['Loading ' fileName ' ...']);
     file = load(fileName);
     disp(['File loaded']);
+    
     data = file.dat;
     channels = file.channels;
     fs = file.fs;
     ttx = contains(fileName, 'TTX');
+    params.duration = length(data)/fs;
     
+    % Truncate the data if specified
     if isfield(params, 'subsample_time')
         if ~isempty(params.subsample_time)
             start_frame = params.subsample_time(1) * fs;
@@ -52,69 +59,69 @@ for recording = 1:numel(files)
         params.duration = length(data)/fs;
     end
     
+    saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
     
-    
-    for L = costList
-        params.L = L;
-        tic
-        disp('Detecting spikes...');
-        disp(['L = ' num2str(L)]);
-        
-        
-        % Run spike detection
-        for channel = 1:length(channels)
+    if ~exist(saveName, 'file');
+        for L = costList
+            params.L = L;
+            tic
+            disp('Detecting spikes...');
+            disp(['L = ' num2str(L)]);
             
-            spikeStruct = struct();
-            waveStruct = struct();
-            trace = data(:, channel);
+            spikeTimes = {};
+            spikeWaveforms = {};
             
-            for wname = wnameList
+            % Run spike detection
+            for channel = 1:length(channels)
                 
-                wname = char(wname);
-                valid_wname = strrep(wname, '.', 'p');
-                spikeWaves = [];
-                % timestamps = zeros(1, length(trace));
+                spikeStruct = struct();
+                waveStruct = struct();
+                trace = data(:, channel);
                 
-                if ~(ismember(channel, grd))
+                for wname = wnameList
                     
-                    [spikeFrames, spikeWaves, ~, ~] = ...
-                        detectFramesCWT(trace,fs,wid,wname,L,nScales, ...
-                        multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
-                        maxPeakThrMultiplier, posPeakThrMultiplier);
+                    wname = char(wname);
+                    valid_wname = strrep(wname, '.', 'p');
+                    spikeWaves = [];
+                    spikeFrames = [];
                     
-                    waveStruct.(valid_wname) = spikeWaves;
-                    spikeStruct.(valid_wname) = spikeFrames / fs;
-                    
-                    % timestamps(spikeFrames) = 1;
+                    if ~(ismember(channel, grd))
+                        
+                        [spikeFrames, spikeWaves, ~, ~] = ...
+                            detectFramesCWT(trace,fs,wid,wname,L,nScales, ...
+                            multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
+                            maxPeakThrMultiplier, posPeakThrMultiplier);
+                        
+                        waveStruct.(valid_wname) = spikeWaves;
+                        spikeStruct.(valid_wname) = spikeFrames / fs;
+                        
+                    end
                 end
                 
-                
-                % jSpikes(channel, :) = timestamps;
+                spikeTimes{channel} = spikeStruct;
+                spikeWaveforms{channel} = waveStruct;
                 
             end
-            % traces(channel, :) = filtTrace;
-            spikeTimes{channel} = spikeStruct;
-            spikeWaveforms{channel} = waveStruct;
             
+            toc
+            
+            % Save results
+            
+            save_suffix = ['_' strrep(num2str(L), '.', 'p')];
+            params.save_suffix = save_suffix;
+            params.fs = fs;
+            
+            spikeDetectionResult = struct();
+            spikeDetectionResult.method = 'CWT';
+            spikeDetectionResult.params = params;
+            
+            saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
+            disp(['Saving results to: ' saveName]);
+            
+            varsList = {'spikeTimes', 'channels', 'spikeDetectionResult', ...
+                'spikeWaveforms'};
+            save(saveName, varsList{:}, '-v7.3');
         end
-        
-        toc
-        
-        % Save results
-        spikeDetectionResult = struct();
-        spikeDetectionResult.fs = fs;
-        spikeDetectionResult.method = 'CWT';
-        spikeDetectionResult.params = params;
-        
-        save_suffix = ['_' strrep(num2str(L), '.', 'p')];
-        params.save_suffix = save_suffix;
-        
-        saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
-        disp(['Saving results to: ' saveName]);
-        
-        varsList = {'spikeTimes', 'channels', 'spikeDetectionResult', ...
-            'spikeWaveforms'};
-        save(saveName, varsList{:}, '-v7.3');
     end
 end
 progressbar(1);

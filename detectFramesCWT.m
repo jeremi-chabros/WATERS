@@ -108,6 +108,7 @@ try
     
     sFr = [];
     spikeWaveforms = [];
+    spikeFrames = [];
     
     spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
     
@@ -130,6 +131,8 @@ try
             
             %   Remove the artifacts
             if negativePeak < minPeakThr && positivePeak < posPeakThr
+                newSpikeFrame = [];
+                shape = [];
                 newSpikeFrame = spikeFrames(i)+pos-win;
                 shape = filteredData(newSpikeFrame-25:newSpikeFrame+25);
                 sFr = [sFr newSpikeFrame];
@@ -138,7 +141,6 @@ try
         end
     end
     spikeFrames = sFr;
-    
 catch
     disp(['Failed to detect spikes']);
     spikeFrames = [];
