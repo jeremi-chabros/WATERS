@@ -67,7 +67,7 @@ Requires MATLAB with Wavelet Toolbox and Signal Processing Toolbox.
 ## Usage
 
 Organization of different functions is as follows:\
-
+```bash
 .\
 ├── getSpikesTS.m\
 │   └── detectFramesCWT.m\
@@ -75,6 +75,7 @@ Organization of different functions is as follows:\
 |       |   └── detectSpikes.m\
 |       ├── customWavelet.m\
 |       └── detect_spikes_wavelet.m\
+```
 
 
 Within MATLAB Command Window
