@@ -72,7 +72,7 @@ Organization of different functions is as follows:\
 ├── getSpikesTS.m
 │   └── detectFramesCWT.m
 │       ├── getTemplate.m
-│       |   └── detectSpikes.m
+│       │   └── detectSpikes.m
 │       ├── customWavelet.m
 │       └── detect_spikes_wavelet.m
 ```
