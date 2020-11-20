@@ -1,6 +1,6 @@
 function [ave_trace, spikeTrain] = getTemplate(data, multiplier, refPeriod_ms, n_spikes_to_plot)
 
-[spikeTrain, ~, ~] = detectSpikes(data, multiplier, refPeriod_ms);
+[spikeTrain, ~, ~] = detectSpikesThreshold(data, multiplier, refPeriod_ms);
 
 
 sp_times = find(spikeTrain == 1);

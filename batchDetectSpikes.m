@@ -30,7 +30,7 @@ posPeakThrMultiplier = params.posPeakThrMultiplier;
 % Get files
 % Modify the '*string*.mat' wildcard to include subset of recordings
 
-files = dir([dataPath '*slice1*.mat']);
+files = dir([dataPath '*slice1_1*.mat']);
 
 for recording = 1:numel(files)
     
@@ -95,7 +95,7 @@ for recording = 1:numel(files)
                             maxPeakThrMultiplier, posPeakThrMultiplier);
                         
                         waveStruct.(valid_wname) = spikeWaves;
-                        spikeStruct.(valid_wname) = spikeFrames / fs;
+                        spikeStruct.(valid_wname) = spikeFrames;
                         
                     end
                 end

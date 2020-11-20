@@ -1,4 +1,4 @@
-function [newWaveletIntegral, newWaveletSqN] = customWavelet(ave_trace)
+function [newWaveletIntegral, newWaveletSqN] = adaptWavelet(ave_trace)
 
 template = ave_trace;
 

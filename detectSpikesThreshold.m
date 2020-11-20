@@ -1,5 +1,5 @@
 function [spikeTrain, finalData, threshold] = ...
-    detectSpikes(data, multiplier, refPeriod_ms)
+    detectSpikesThreshold(data, multiplier, refPeriod_ms)
 
 % Input:
 %   data: n x 1 vector containing the raw signal, where n is the number of

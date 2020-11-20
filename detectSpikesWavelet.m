@@ -1,4 +1,4 @@
-function [TE,c] = detect_spikes_wavelet(...
+function spikeFrames = detectSpikesWavelet(...
     Signal, SFr, Wid, Ns, option, L, wname, PltFlg, CmtFlg)
 
 % DETECT_SPIKES_WAVELET wavelet based algorithm for detection of transients
@@ -53,12 +53,17 @@ function [TE,c] = detect_spikes_wavelet(...
 %
 %   Modified by:
 %   Zoran Nenadic
-%   University fo California, Irvine
+%   University of California, Irvine
 %   February 2008
+%
+%   Modified by:
+%   Jeremi Chabros
+%   University of Cambridge
+%   November 2020
 
 
 %admissible wavelet families (more wavelets could be added)
-wfam = {'bior1.5','bior1.3','sym2','db2','sym7','sym5','mea'};
+wfam = {'bior1.5','bior1.3','sym2','db2','haar','mea'};
 
 if sum(strcmp(wname,wfam)) == 0
     error('unknown wavelet family')
@@ -131,16 +136,16 @@ for i = 1:Ns
     Io = Index;
 end
 
-TE = parse(Index,SFr,Wid);
+spikeFrames = parse(Index,SFr,Wid);
 
 if PltFlg == 1
     close all
     figure(1)
     scale = 64./[max(abs(c),[],2) * ones(1,Nt)];
     temp = zeros(1,Nt);
-    temp(TE) = 1;
+    temp(spikeFrames) = 1;
     image(flipud(abs(c)) .* scale)
-    colormap hsv
+    colormap pink
     ylabel('Scales')
     Wt = [fliplr(W)];
     set(gca,'YTick',1:Ns,'YTickLabel',Wt,'Position',[0.1 0.2 0.8 0.6], ...
@@ -148,25 +153,23 @@ if PltFlg == 1
     title(['|C| across scales: ' num2str(W)])
     ah2 = axes;
     set(ah2,'Position',[0.1 0.1 0.8 0.1])
-    plot(temp,'o-m','MarkerSize',3,'MarkerFaceColor','m')
+    plot(temp,'o-m','MarkerSize',4,'MarkerFaceColor','m')
     set(gca,'YTick',[],'XLim',[1 Nt])
     xlabel('Time (samples)')
     ylabel('Spikes')
-    set(gcf, 'Position', [200 300 1200 200]);
     
     figure(2)
-    plot(Signal,'Color',[0.5 0.5 0.5],'LineWidth', 1)
+    plot(Signal,'Color',[0.7 0.7 0.7],'LineWidth',2)
     hold on
-    plot(ct','-o','LineWidth',0.5,'MarkerFaceColor','k', ...
+    plot(ct','-o','LineWidth',1,'MarkerFaceColor','k', ...
         'MarkerSize',4)
-%     xlabel('Time (samples)')
+    xlabel('Time (samples)')
     ylabel('Coefficients')
-    set(gca,'XLim',[1 Nt], 'xcolor','none')
-    set(gcf, 'Position', [200 300 1200 200]);
+    set(gca,'XLim',[1 Nt])
 end
 
 if CmtFlg == 1
-    disp([num2str(length(TE)) ' spikes found'])
+    disp([num2str(length(spikeFrames)) ' spikes found'])
     disp(['elapsed time: ' num2str(etime(clock,to))])
 end
 
@@ -193,7 +196,11 @@ ScaleMax = 3;
 ScaleMax = ScaleMax*SFr;
 
 switch num2str(wname)
-
+    
+    case 'haar'
+        for i = 1:Ns
+            Scale(i) = Width(i)/dt - 1;
+        end
     case 'db2'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
@@ -213,7 +220,6 @@ switch num2str(wname)
         WidthTable = WidthTable + [1:length(Scales)] * Eps;
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
-        
     case 'sym2'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
@@ -233,7 +239,6 @@ switch num2str(wname)
         WidthTable = WidthTable + [1:length(Scales)] * Eps;
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
-        
     case 'bior1.3'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
@@ -253,7 +258,6 @@ switch num2str(wname)
         WidthTable = WidthTable + [1:length(Scales)] * Eps;
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
-        
     case 'bior1.5'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
@@ -274,9 +278,12 @@ switch num2str(wname)
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
         
-        %% Custom wavelets
         
-        case 'sym7'
+        
+    % Custom, data-driven wavelet added by JJC, November 2020
+    % See: https://github.com/jeremi-chabros/CWT
+    
+    case 'mea'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
         for i = 1:length(Scales)
@@ -296,48 +303,8 @@ switch num2str(wname)
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
         
-        case 'sym5'
-        Scales = 2:ScaleMax;
-        c = cwt(Signal,Scales,wname);
-        for i = 1:length(Scales)
-            %indicators of positive coefficients
-            IndPos = (c(i,:) > 0);
-            %indicators of derivative
-            IndDer = diff(IndPos);
-            %indices of negative slope zero crossings
-            IndZeroCross = find(IndDer == -1);
-            IndMax = IndZeroCross > 500;
-            Ind(2) = min(IndZeroCross(IndMax))+1;
-            IndMin = IndZeroCross < 500;
-            Ind(1) = max(IndZeroCross(IndMin));
-            WidthTable(i) = diff(Ind) * dt;
-        end
-        WidthTable = WidthTable + [1:length(Scales)] * Eps;
-        %look-up table
-        Scale = round(interp1(WidthTable,Scales,Width,'linear'));
         
-        case 'mea'
-        Scales = 2:ScaleMax;
-        c = cwt(Signal,Scales,wname);
-        for i = 3:length(Scales)
-            %indicators of positive coefficients
-            IndPos = (c(i,:) > 0);
-            %indicators of derivative
-            IndDer = diff(IndPos);
-
-            %indices of negative slope zero crossings
-            IndZeroCross = find(IndDer == -1);
-            IndMax = IndZeroCross > 500;
-            Ind(2) = min(IndZeroCross(IndMax))+1;
-            IndMin = IndZeroCross < 500;
-            Ind(1) = max(IndZeroCross(IndMin));
-
-            WidthTable(i) = diff(Ind) * dt;
-        end
-        WidthTable = WidthTable + [1:length(Scales)] * Eps;
         
-        %look-up table
-        Scale = round(interp1(WidthTable,Scales,Width,'linear'));
         
         
     otherwise
@@ -370,7 +337,7 @@ function fcn = parse(Index,SFr,Wid);
 %The real challenge here is to merge multiple 1's that belong to the same
 %spike into one event and to locate that event
 
-Refract = 0.5 * Wid(2);    %[ms] the refractory period -- can't resolve spikes
+Refract = 1.5 * Wid(2);    %[ms] the refractory period -- can't resolve spikes
 %that are closer than Refract;
 Refract = round(Refract * SFr);
 

@@ -97,7 +97,7 @@ if strcmp(wname, 'mea') && ~ttx
     
     %   Adapt custom wavelet from the waveform obtained above
     try
-        customWavelet(ave_trace);
+        adaptWavelet(ave_trace);
     catch
         disp(['Failed to adapt custom wavelet']);
     end
@@ -110,7 +110,7 @@ try
     spikeWaveforms = [];
     spikeFrames = [];
     
-    spikeFrames = detect_spikes_wavelet(filteredData, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
+    spikeFrames = detectSpikesWavelet(filteredData, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
     
     %   Align the spikes by negative peaks
     %   Post-hoc artifact removal:
