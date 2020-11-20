@@ -1,4 +1,4 @@
-function getSpikesTS(dataPath, savePath, varargin)
+function batchDetectSpikes(dataPath, savePath, varargin)
 
 % Master script for spike detection
 % See: https://github.com/jeremi-chabros/CWT
