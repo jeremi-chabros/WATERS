@@ -66,6 +66,16 @@ Requires MATLAB with Wavelet Toolbox and Signal Processing Toolbox.
 
 ## Usage
 
+Organization of different functions is as follows:\
+`
+.
+├── *getSpikesTS.m
+│   └── detectFramesCWT.m
+|       ├── getTemplate.m
+|       |   └── detectSpikes.m
+|       ├── customWavelet.m
+|       └── detect_spikes_wavelet.m
+*`
 
 Within MATLAB Command Window
 1. `setParams();` – set spike detection parameters (overwrites the params.mat file that contains structure `params` with the spike detection parameters\
