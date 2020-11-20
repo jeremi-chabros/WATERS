@@ -89,7 +89,7 @@ Manually set the parameters using the `setParameters.m` script
 
 Note: sometimes `addpath(dataPath)` might be required
 
-> This method is still under development and troubleshooting and hence frequent `git pull` is recommended:\
+> This method is still under development and troubleshooting and hence frequent `git pull` is recommended:
 > 1. `git stash -A`
 > 2. `git pull`
 
