@@ -69,7 +69,7 @@ Requires MATLAB with Wavelet Toolbox and Signal Processing Toolbox.
 Organization of different functions is as follows:
 ```bash
 
-├── batchDetectSpikesTS.m
+├── batchDetectSpikes.m
 │   └── detectSpikesCWT.m
 │       ├── getTemplate.m
 │       │   └── detectSpikesThreshold.m
