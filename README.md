@@ -66,9 +66,9 @@ Requires MATLAB with Wavelet Toolbox and Signal Processing Toolbox.
 
 ## Usage
 
-Organization of different functions is as follows:\
+Organization of different functions is as follows:
 ```bash
-.
+
 ├── getSpikesTS.m
 │   └── detectFramesCWT.m
 │       ├── getTemplate.m
