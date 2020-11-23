@@ -1,32 +1,48 @@
-function [ave_trace, spikeTrain] = getTemplate(data, multiplier, refPeriod_ms, n_spikes_to_plot)
+function [aveWaveform, spikeTimes] = getTemplate(trace, multiplier, refPeriod, fs, nSpikes)
 
-[spikeTrain, ~, ~] = detectSpikesThreshold(data, multiplier, refPeriod_ms);
+% Description:
+%   Obtain median waveform from spikes detected with threshold method
+
+% INPUT:
+%   trace: [n x 1] filtered voltage trace
+%   multiplier: [scalar] threshold multiplier used for spike detection
+%   refPeriod: [scalar] refractory period [ms] after a spike in which
+%                       no spikes will be detected
+%   fs: [scalar] sampling freqency in [Hz]
+%   nSpikes: [scalar] the number of spikes used to obtain average waveform
+
+% OUTPUT:
+%   aveWaveform: [51 x 1] average spike waveform
+%   spikeTimes: [#spikes x 1] vector containing detected spike times
+
+% Author:
+%   Jeremy Chabros, University of Cambridge, 2020
+%   email: jjc80@cam.ac.uk
+%   github.com/jeremi-chabros
+
+[spikeTrain, ~, ~] = detectSpikesThreshold(trace, multiplier, refPeriod, fs, 0);
+spikeTimes = find(spikeTrain == 1);
 
 
-sp_times = find(spikeTrain == 1);
-
-if  sum(spikeTrain) < n_spikes_to_plot
-    
-    % If fewer spikes than specified - use the maximum possible number
-    n_spikes_to_plot = sum(spikeTrain);
-    disp('Not enough spikes detected with specified threshold, using ',num2str(n_spikes_to_plot),'instead');
+%   If fewer spikes than specified - use the maximum number possible
+if  numel(spikeTimes) < nSpikes
+    nSpikes = sum(spikeTrain);
+    disp(['Not enough spikes detected with specified threshold, using ', num2str(nSpikes),'instead']);
 end
 
-% Uniformly sample n_spikes
-spikes2use = round(linspace(2, length(sp_times)-2, n_spikes_to_plot));
+%   Uniformly sample n_spikes
+spikes2use = round(linspace(2, length(spikeTimes)-2, nSpikes));
 
-for i = 1:n_spikes_to_plot
-    n = sp_times(spikes2use(i));
-    bin = data(n-10:n+10);
-    sp_peak_time = find(bin == min(bin))-11; % 11 = middle sample in bin
-    all_trace(:,i) = data(n+sp_peak_time-25:n+sp_peak_time+25);
+for i = 1:nSpikes
+    n = spikeTimes(spikes2use(i));
+    bin = trace(n-10:n+10);
+    pos = find(bin == min(bin))-11; % 11 = middle sample in bin
+    spikeWaveforms(:,i) = trace(n+pos-25:n+pos+25);
 end
+% 
+% 
+% %   Align spikes to negative peaks
+% [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, 10, 0);
 
-try
-    for i = 1:size(all_trace, 1)
-        ave_trace(i) = median(all_trace(i,:));
-    end
-catch
-    disp('Problem with ave trace');
-end
+aveWaveform = median(spikeWaveforms');
 end

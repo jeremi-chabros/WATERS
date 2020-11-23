@@ -1,6 +1,22 @@
-function [newWaveletIntegral, newWaveletSqN] = adaptWavelet(ave_trace)
+function [newWaveletIntegral, newWaveletSqN] = adaptWavelet(aveWaveform)
 
-template = ave_trace;
+% Description:
+%   Uses spike waveform to adapt custom wavelet that can be used for
+%   continuous wavelet transform
+
+% INPUT:
+%   aveWaveform: average (mean or median) spike waveform
+
+% OUTPUT:
+%   newWaveletIntegral: area under the newly adapted wavelet
+%   newWaveletSqN: square normm of the newly adapted wavelet
+
+% Author:
+%   Jeremy Chabros, University of Cambridge, 2020
+%   email: jjc80@cam.ac.uk
+%   github.com/jeremi-chabros/CWT
+
+template = aveWaveform;
 
 % Interpolation
 template = spline(1:length(template), template, linspace(1, length(template), 100));

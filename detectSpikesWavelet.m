@@ -280,7 +280,7 @@ switch num2str(wname)
         
         
         
-    % Custom, data-driven wavelet added by JJC, November 2020
+    % Custom data-driven wavelets added by JJC, November 2020
     % See: https://github.com/jeremi-chabros/CWT
     
     case 'mea'
