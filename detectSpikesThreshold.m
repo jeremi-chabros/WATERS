@@ -19,7 +19,7 @@ fs = 25000;
 % [b, a] = butter(filterOrder, wn);
 % data = filtfilt(b, a, double(data));
 
-% JJC 2020/11/14: Removed redundant filtering as it is alredy done in detectFramesCWT.m
+% JJC 2020/11/14: Removed redundant filtering as it is alredy done in detectSpikesCWT.m
 % Uncomment if want to use threshold spike detection on its own
 
 % Calculate the threshold (median absolute deviation)

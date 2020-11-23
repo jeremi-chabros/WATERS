@@ -30,12 +30,12 @@ posPeakThrMultiplier = params.posPeakThrMultiplier;
 % Get files
 % Modify the '*string*.mat' wildcard to include subset of recordings
 
-files = dir([dataPath '*slice1_1*.mat']);
+files = dir([dataPath '*190710*.mat']);
 
 for recording = 1:numel(files)
     
     progressbar(['File: ' num2str(recording) '/' num2str(numel(files))]);
-    progressbar(recording/numel(files));
+    progressbar((recording-1)/numel(files));
     fileName = files(recording).name;
     
     % Load data
@@ -59,9 +59,6 @@ for recording = 1:numel(files)
         params.duration = length(data)/fs;
     end
     
-    
-    
-
         for L = costList
             saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
                 if ~exist(saveName, 'file');

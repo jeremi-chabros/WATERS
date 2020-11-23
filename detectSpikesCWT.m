@@ -11,7 +11,7 @@ function [spikeFrames, spikeWaveforms, filteredData, threshold] = detectSpikesCW
 %   Modified by JJC
 %
 %   Custom wavelet specific functions: getTemplate.m, customWavelet.m
-%   Created by JJC (2020), https://github.com/jeremi-chabros/CWT
+%   Written by JJC (2020), https://github.com/jeremi-chabros/CWT
 
 
 % Input:

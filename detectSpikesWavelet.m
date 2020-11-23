@@ -192,7 +192,7 @@ Width = linspace(Wid(1),Wid(2),Ns);
 %infinitesimally small number
 Eps = 10^(-15);
 
-ScaleMax = 3;
+ScaleMax = 4;
 ScaleMax = ScaleMax*SFr;
 
 switch num2str(wname)
@@ -286,7 +286,7 @@ switch num2str(wname)
     case 'mea'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
-        for i = 1:length(Scales)
+        for i = 3:length(Scales)
             %indicators of positive coefficients
             IndPos = (c(i,:) > 0);
             %indicators of derivative
