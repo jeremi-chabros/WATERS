@@ -69,12 +69,12 @@ Requires MATLAB with Wavelet Toolbox and Signal Processing Toolbox.
 Organization of different functions is as follows:
 ```bash
 
-├── getSpikesTS.m
-│   └── detectFramesCWT.m
+├── batchDetectSpikes.m
+│   └── detectSpikesCWT.m
 │       ├── getTemplate.m
-│       │   └── detectSpikes.m
-│       ├── customWavelet.m
-│       └── detect_spikes_wavelet.m
+│       │   └── detectSpikesThreshold.m
+│       ├── adaptWavelet.m
+│       └── detectSpikesWavelet.m
 ```
 
 
@@ -85,7 +85,7 @@ Manually set the parameters using the `setParameters.m` script
 * See the `setParameters.m` or load `params.mat` for more information on the data structure.
 2. `dataPath = [/path/to/dataFolder '/'];` – set path to folder with data (has to end with '/')
 3. `savePath = [/path/to/saveFolder '/'];` – set path to output folder (has to end with '/')
-4. `getSpikesTS(dataPath, savePath);` – this is the main analysis function
+4. `batchDetectSpikes(dataPath, savePath);` – this is the main analysis function
 
 Note: sometimes `addpath(dataPath)` might be required
 
