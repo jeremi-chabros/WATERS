@@ -76,6 +76,13 @@ Organization of different functions is as follows:
 │       ├── adaptWavelet.m
 │       └── detectSpikesWavelet.m
 ```
+![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/setParams_manual.png?raw=true)
+
+
+
+
+
+
 
 
 Within MATLAB Command Window
