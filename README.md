@@ -77,7 +77,7 @@ Preferred method is executing (or calling from command window) `getSpikesApp.m`
 Tip: Hover mouse over a parameter to display its value and usage.
 
 
-
+---
 Organization of different functions is as follows:
 ```bash
 
