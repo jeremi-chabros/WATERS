@@ -323,6 +323,7 @@ if sum(NaNInd) > 0
         disp(['Change the value on line: ''ScaleMax = 2'' to something larger'])
     end
 end
+end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -384,3 +385,7 @@ else
 end
 
 fcn = TE;
+end
+
+
+end

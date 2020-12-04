@@ -1,4 +1,4 @@
-function batchDetectSpikes(dataPath, savePath, varargin)
+function batchDetectSpikes(dataPath, savePath, option, params)
 
 % Description:
 %	Master script for spike detection using CWT method. Runs spike
@@ -6,24 +6,35 @@ function batchDetectSpikes(dataPath, savePath, varargin)
 %	wavelets.
 
 % INPUT:
+%
 %   dataPath: path (ending with '/') to the folder containing data to be
 %             analyzed
+%
 %   savePath: path (ending with '/') to the folder where spike detection
 %             output will be saved
-%   varargin: optional argument to pass structure containing parameters
+%
+%   option: pass either path to files ('path') or list of files ('list');
+%
+%   params: [optional] argument to pass structure containing parameters;
+%           otherwise, run setParams() first to set parameters
+
 
 % Author:
 %   Jeremy Chabros, University of Cambridge, 2020
 %   email: jjc80@cam.ac.uk
 %   github.com/jeremi-chabros/CWT
 
-addpath(dataPath)
+arguments
+    dataPath;
+    savePath;
+    option;
+    params;
+    
+end
 
 %   Load parameters
-if ~exist(varargin, 'var')
+if ~exist('params', 'var')
     load('params.mat');
-else
-    params = varargin{1};
 end
 
 multiplier = params.multiplier;
@@ -41,13 +52,21 @@ posPeakThrMultiplier = params.posPeakThrMultiplier;
 % Get files
 % Modify the '*string*.mat' wildcard to include a subset of recordings
 
-files = dir([dataPath '*190710*.mat']);
+if exist('option', 'var') && strcmp(option, 'list')
+    files = dataPath;
+else
+    files = dir([dataPath '*.mat']);
+end
 
 for recording = 1:numel(files)
     
     progressbar(['File: ' num2str(recording) '/' num2str(numel(files))]);
     
-    fileName = files(recording).name;
+    if exist('option', 'var') && strcmp(option, 'list')
+        fileName = files{recording};
+    else
+        fileName = files(recording).name;
+    end
     
     % Load data
     disp(['Loading ' fileName ' ...']);
@@ -63,16 +82,23 @@ for recording = 1:numel(files)
     % Truncate the data if specified
     if isfield(params, 'subsample_time')
         if ~isempty(params.subsample_time)
-            start_frame = params.subsample_time(1) * fs;
+            if params.subsample_time(1) == 1
+                start_frame = 1;
+                
+            else
+                start_frame = params.subsample_time(1) * fs;
+                
+            end
             end_frame = params.subsample_time(2) * fs;
+            
         end
         data = data(start_frame:end_frame, :);
         params.duration = length(data)/fs;
     end
     
-        for L = costList
-            saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
-                if ~exist(saveName, 'file');
+    for L = costList
+        saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
+        if ~exist(saveName, 'file')
             params.L = L;
             tic
             disp('Detecting spikes...');
@@ -88,9 +114,9 @@ for recording = 1:numel(files)
                 waveStruct = struct();
                 trace = data(:, channel);
                 
-                for wname = wnameList
+                for wname = 1:numel(wnameList)
                     
-                    wname = char(wname);
+                    wname = char(wnameList{wname});
                     valid_wname = strrep(wname, '.', 'p');
                     spikeWaves = [];
                     spikeFrames = [];
@@ -105,6 +131,9 @@ for recording = 1:numel(files)
                         waveStruct.(valid_wname) = spikeWaves;
                         spikeStruct.(valid_wname) = spikeFrames;
                         
+                    else
+                        waveStruct.(valid_wname) = [];
+                        spikeStruct.(valid_wname) = [];
                     end
                 end
                 
