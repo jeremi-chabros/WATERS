@@ -66,6 +66,18 @@ Requires MATLAB with Wavelet Toolbox and Signal Processing Toolbox.
 
 ## Usage
 
+
+Preferred method is executing (or calling from command window) `getSpikesApp.m`
+1. Toggle between loading a file (or files) or setting a path to the data folder
+2. Select files/folder 
+3. Select output folder (by default saves in current directory)
+4. Set parameters and save them
+5. Run spike detection
+
+Tip: Hover mouse over a parameter to display its value and usage.
+
+
+---
 Organization of different functions is as follows:
 ```bash
 
@@ -77,13 +89,6 @@ Organization of different functions is as follows:
 │       └── detectSpikesWavelet.m
 ```
 ![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/setParams_manual.png?raw=true)
-
-
-
-
-
-
-
 
 Within MATLAB Command Window
 1. `setParams();` – set spike detection parameters (overwrites the `params.mat` file that contains structure `params` with the spike detection parameters\
