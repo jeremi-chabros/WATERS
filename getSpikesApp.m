@@ -47,6 +47,7 @@ classdef getSpikesApp < matlab.apps.AppBase
         savePath;
         params_;
         wbar;
+        step = 0;
     end
     
     methods (Access = private)
@@ -1061,12 +1062,12 @@ classdef getSpikesApp < matlab.apps.AppBase
             
             app.params_ = params;
             
+            app.step = app.step + 1;
         end
         
         % Button pushed function: LoaddataButton
         function LoaddataButtonPushed(app, event)
-            app.SavefolderpathEditField.Value = [pwd, '/'];
-            
+
             if strcmp(app.Switch.Value, 'Folders')
                 app.UIFigure.Visible = 'off';
                 app.dataPath = [uigetdir() '/'];
@@ -1086,6 +1087,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                 end
             end
             app.ListoffilesTextArea.Value = filenames';
+            app.step = app.step + 1;
         end
         
         % Value changed function: Switch
@@ -1104,6 +1106,7 @@ classdef getSpikesApp < matlab.apps.AppBase
         % Button pushed function: DetectspikesButton
         function DetectspikesButtonPushed(app, event)
             
+            if app.step >= 2
             app.DetectspikesButton.Text = {['Detecting spikes...'], [' ']};
             app.DetectspikesButton.IconAlignment = 'bottom';
             app.wbar = permute(repmat(app.DetectspikesButton.BackgroundColor,30,1,700),[1,3,2]);
@@ -1120,9 +1123,10 @@ classdef getSpikesApp < matlab.apps.AppBase
                 getSpikes(app, app.files, app.savePath, option, app.params_)
             end
             
+            app.ListoffilesTextArea.FontColor = [0 0.797 0];
             app.DetectspikesButton.Icon = '';
             app.DetectspikesButton.Text = 'Detection complete';
-            
+            end
         end
         
         % Value changed function: DatafolderpathEditField
@@ -1394,6 +1398,7 @@ classdef getSpikesApp < matlab.apps.AppBase
             app.SavefolderpathEditField.Layout.Row = 3;
             app.SavefolderpathEditField.Layout.Column = 3;
             app.SavefolderpathEditField.Tooltip = app.OutputfolderButton.Tooltip;
+            app.SavefolderpathEditField.Value = [pwd, '/'];
             
             % Create ListoffilesTextAreaLabel
             app.ListoffilesTextAreaLabel = uilabel(app.GridLayout);
@@ -1410,6 +1415,7 @@ classdef getSpikesApp < matlab.apps.AppBase
             app.ListoffilesTextArea.FontName = 'Courier';
             app.ListoffilesTextArea.Layout.Row = [5 10];
             app.ListoffilesTextArea.Layout.Column = [2 3];
+            
             
             % Create DetectspikesButton
             app.DetectspikesButton = uibutton(app.GridLayout, 'push');
