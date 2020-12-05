@@ -35,6 +35,12 @@ classdef getSpikesApp < matlab.apps.AppBase
         SavefolderpathEditField         matlab.ui.control.EditField
         ListoffilesTextAreaLabel        matlab.ui.control.Label
         ListoffilesTextArea             matlab.ui.control.TextArea
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%
+        AnalysedFilesTextAreaLabel      matlab.ui.control.Label
+        AnalysedFilesTextArea           matlab.ui.control.TextArea
+        %%%%%%%%%%%%%%%%%%%%%%%%
+        
         DetectspikesButton              matlab.ui.control.Button
         SpiketimeunitDropDownLabel      matlab.ui.control.Label
         SpiketimeunitDropDown           matlab.ui.control.DropDown
@@ -48,6 +54,8 @@ classdef getSpikesApp < matlab.apps.AppBase
         params_;
         wbar;
         step = 0;
+        filePath;
+        filenames;
     end
     
     methods (Access = private)
@@ -130,7 +138,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                 if exist('option', 'var') && strcmp(option, 'list')
                     fileName = files{recording};
                 else
-                    fileName = files(recording).name;
+                    fileName = [app.filePath files(recording).name];
                 end
                 
                 % Load data
@@ -162,7 +170,13 @@ classdef getSpikesApp < matlab.apps.AppBase
                 end
                 
                 for L = costList
-                    saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
+                    
+                    if startsWith(fileName, app.filePath)
+                        saveName = [savePath strrep(fileName(1:end-4), app.filePath, '') '_L_' num2str(L) '_spikes.mat'];
+                    else
+                        saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
+                    end
+                    
                     if ~exist(saveName, 'file')
                         params.L = L;
                         tic
@@ -194,6 +208,10 @@ classdef getSpikesApp < matlab.apps.AppBase
                                         maxPeakThrMultiplier, posPeakThrMultiplier);
                                     
                                     waveStruct.(valid_wname) = spikeWaves;
+                                    
+                                    if ~numel(spikeFrames)
+                                        disp(['Electrode ' num2str(channel) ': no spikes detected']);
+                                    end
                                     
                                     switch unit
                                         
@@ -232,15 +250,27 @@ classdef getSpikesApp < matlab.apps.AppBase
                         spikeDetectionResult.method = 'CWT';
                         spikeDetectionResult.params = params;
                         
-                        saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
                         disp(['Saving results to: ' saveName]);
                         
                         varsList = {'spikeTimes', 'channels', 'spikeDetectionResult', ...
                             'spikeWaveforms'};
                         save(saveName, varsList{:}, '-v7.3');
+                        disp(' ');
                     end
                 end
+                
+                if recording+1 <= numel(files)
+                    txt_val = {app.filenames{recording+1:end}};
+                end
+                
+                app.ListoffilesTextArea.Value = txt_val;
+                
+                txt_val_new = app.AnalysedFilesTextArea.Value;
+                txt_val_new{end+1} = app.filenames{recording};
+                app.AnalysedFilesTextArea.Value = txt_val_new;
             end
+            app.ListoffilesTextArea.Value = {''};
+            
         end
         
         %%
@@ -360,7 +390,6 @@ classdef getSpikesApp < matlab.apps.AppBase
                     posPeakThrMultiplier);
                 
             catch
-                disp(['Failed to detect spikes']);
                 spikeTimes = [];
             end
         end
@@ -396,7 +425,6 @@ classdef getSpikesApp < matlab.apps.AppBase
             %   If fewer spikes than specified - use the maximum number possible
             if  numel(spikeTimes) < nSpikes
                 nSpikes = sum(spikeTrain);
-                disp(['Not enough spikes detected with specified threshold, using ', num2str(nSpikes),'instead']);
             end
             
             %   Uniformly sample n_spikes
@@ -1067,26 +1095,30 @@ classdef getSpikesApp < matlab.apps.AppBase
         
         % Button pushed function: LoaddataButton
         function LoaddataButtonPushed(app, event)
-
+            
             if strcmp(app.Switch.Value, 'Folders')
                 app.UIFigure.Visible = 'off';
                 app.dataPath = [uigetdir() '/'];
                 figure(app.UIFigure)
                 app.DatafolderpathEditField.Value = app.dataPath;
                 app.files = dir([app.dataPath '*.mat']);
-                filenames = {app.files.name};
+                app.filenames = {app.files.name};
+                app.filePath = app.dataPath;
                 
             else
                 app.UIFigure.Visible = 'off';
-                app.files = uigetfile('*.mat', 'MultiSelect','on');
+                [app.files, app.filePath] = uigetfile('*.mat', 'MultiSelect','on');
                 figure(app.UIFigure)
-                filenames = app.files;
-                if ~iscell(filenames)
-                    filenames = {filenames};
+                app.filenames = app.files;
+                app.DatafolderpathEditField.Value = app.filePath;
+                app.files = strcat(app.filePath, app.files);
+                
+                if ~iscell(app.filenames)
+                    app.filenames = {app.filenames};
                     app.files = {app.files};
                 end
             end
-            app.ListoffilesTextArea.Value = filenames';
+            app.ListoffilesTextArea.Value = app.filenames';
             app.step = app.step + 1;
         end
         
@@ -1107,25 +1139,30 @@ classdef getSpikesApp < matlab.apps.AppBase
         function DetectspikesButtonPushed(app, event)
             
             if app.step >= 2
-            app.DetectspikesButton.Text = {['Detecting spikes...'], [' ']};
-            app.DetectspikesButton.IconAlignment = 'bottom';
-            app.wbar = permute(repmat(app.DetectspikesButton.BackgroundColor,30,1,700),[1,3,2]);
-            app.wbar([1,end],:,:) = 0;
-            app.wbar(:,[1,end],:) = 0;
-            app.DetectspikesButton.Icon = app.wbar;
-            updateProgressbar(app, 0);
-            
-            if strcmp(app.Switch.Value, 'Folders')
-                option = "path";
-                getSpikes(app, app.dataPath, app.savePath, option, app.params_)
-            else
-                option = "list";
-                getSpikes(app, app.files, app.savePath, option, app.params_)
-            end
-            
-            app.ListoffilesTextArea.FontColor = [0 0.797 0];
-            app.DetectspikesButton.Icon = '';
-            app.DetectspikesButton.Text = 'Detection complete';
+                app.DetectspikesButton.Text = {['Detecting spikes...'], [' ']};
+                app.DetectspikesButton.IconAlignment = 'bottom';
+                app.wbar = permute(repmat(app.DetectspikesButton.BackgroundColor,30,1,700),[1,3,2]);
+                app.wbar([1,end],:,:) = 0;
+                app.wbar(:,[1,end],:) = 0;
+                app.DetectspikesButton.Icon = app.wbar;
+                updateProgressbar(app, 0);
+                
+                app.ListoffilesTextArea.FontColor = [0.6353 0.0784 0.1843];
+                app.ListoffilesTextArea.FontWeight = 'bold';
+                
+                
+                if strcmp(app.Switch.Value, 'Folders')
+                    option = "path";
+                    
+                    getSpikes(app, app.dataPath, app.savePath, option, app.params_);
+                    
+                else
+                    option = "list";
+                    getSpikes(app, app.files, app.savePath, option, app.params_);
+                end
+                
+                app.DetectspikesButton.Icon = '';
+                app.DetectspikesButton.Text = 'Detection complete';
             end
         end
         
@@ -1413,8 +1450,29 @@ classdef getSpikesApp < matlab.apps.AppBase
             app.ListoffilesTextArea = uitextarea(app.GridLayout);
             app.ListoffilesTextArea.Editable = 'off';
             app.ListoffilesTextArea.FontName = 'Courier';
-            app.ListoffilesTextArea.Layout.Row = [5 10];
+            app.ListoffilesTextArea.Layout.Row = [5 7];
             app.ListoffilesTextArea.Layout.Column = [2 3];
+            app.ListoffilesTextArea.FontColor = [0 0 0];
+            app.ListoffilesTextArea.Position = [258 277 150 157];
+            
+            % Create AnalysedFilesTextAreaLabel
+            app.AnalysedFilesTextAreaLabel = uilabel(app.GridLayout);
+            app.AnalysedFilesTextAreaLabel.HorizontalAlignment = 'center';
+            app.AnalysedFilesTextAreaLabel.FontSize = 14;
+            app.AnalysedFilesTextAreaLabel.FontWeight = 'bold';
+            app.AnalysedFilesTextAreaLabel.Layout.Row = 8;
+            app.AnalysedFilesTextAreaLabel.Layout.Column = [2 3];
+            app.AnalysedFilesTextAreaLabel.Text = 'Analysed files';
+            
+            % Create AnalysedFilesTextArea
+            app.AnalysedFilesTextArea = uitextarea(app.GridLayout);
+            app.AnalysedFilesTextArea.Editable = 'off';
+            app.AnalysedFilesTextArea.Layout.Row = [9 11];
+            app.AnalysedFilesTextArea.Layout.Column = [2 3];
+            app.AnalysedFilesTextArea.FontName = 'Courier';
+            app.AnalysedFilesTextArea.FontWeight = 'bold';
+            app.AnalysedFilesTextArea.FontColor = [0.4667 0.6745 0.1882];
+            app.AnalysedFilesTextArea.Value = {''};
             
             
             % Create DetectspikesButton
@@ -1422,7 +1480,7 @@ classdef getSpikesApp < matlab.apps.AppBase
             app.DetectspikesButton.ButtonPushedFcn = createCallbackFcn(app, @DetectspikesButtonPushed, true);
             app.DetectspikesButton.FontSize = 14;
             app.DetectspikesButton.FontWeight = 'bold';
-            app.DetectspikesButton.Layout.Row = [11 12];
+            app.DetectspikesButton.Layout.Row = [13 14];
             app.DetectspikesButton.Layout.Column = [2 3];
             app.DetectspikesButton.Text = 'Detect spikes';
             app.DetectspikesButton.Tooltip = 'Run spike detection (save parameters first!)';
