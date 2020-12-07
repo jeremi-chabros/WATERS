@@ -49,7 +49,7 @@ classdef getSpikesApp < matlab.apps.AppBase
     
     properties (Access = private)
         dataPath;
-        files;
+        files_;
         savePath;
         params_;
         wbar;
@@ -144,7 +144,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                 % Load data
                 disp(['Loading ' fileName ' ...']);
                 file = load(fileName);
-                disp(['File loaded']);
+                disp('File loaded');
                 
                 data = file.dat;
                 channels = file.channels;
@@ -183,8 +183,8 @@ classdef getSpikesApp < matlab.apps.AppBase
                         disp('Detecting spikes...');
                         disp(['L = ' num2str(L)]);
                         
-                        spikeTimes = {};
-                        spikeWaveforms = {};
+                        spikeTimes = cell(1,60);
+                        spikeWaveforms = cell(1,60);
                         
                         % Run spike detection
                         for channel = 1:length(channels)
@@ -192,6 +192,8 @@ classdef getSpikesApp < matlab.apps.AppBase
                             spikeStruct = struct();
                             waveStruct = struct();
                             trace = data(:, channel);
+                            mad = zeros(1,60);
+                            variance = zeros(1,60);
                             
                             for wname = 1:numel(wnameList)
                                 
@@ -259,12 +261,13 @@ classdef getSpikesApp < matlab.apps.AppBase
                     end
                 end
                 
-                if recording+1 <= numel(files)
+                if recording+1 <= numel(files) && numel(files) > 1
                     txt_val = {app.filenames{recording+1:end}};
+                else
+                    txt_val = app.filenames;
                 end
                 
                 app.ListoffilesTextArea.Value = txt_val;
-                
                 txt_val_new = app.AnalysedFilesTextArea.Value;
                 txt_val_new{end+1} = app.filenames{recording};
                 app.AnalysedFilesTextArea.Value = txt_val_new;
@@ -364,7 +367,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                 try
                     [aveWaveform, ~] = get_template(app, trace, multiplier, refPeriod, fs, nSpikes);
                 catch
-                    disp(['Failed to obtain mean waveform']);
+                    disp('Failed to obtain mean waveform');
                 end
                 
                 %   Adapt custom wavelet from the waveform obtained above
@@ -372,7 +375,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                     adapt_wavelet(app, aveWaveform);
                     
                 catch
-                    disp(['Failed to adapt custom wavelet']);
+                    disp('Failed to adapt custom wavelet');
                 end
             end
             
@@ -382,13 +385,11 @@ classdef getSpikesApp < matlab.apps.AppBase
                 
                 % Detect spikes
                 spikeTimes = detect_spikes_wavelet(app, trace, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
-                
                 % Align spikes by negative peak & remove artifacts by amplitude
                 [spikeTimes, spikeWaveforms] = align_peaks(app, spikeTimes, trace, win, 1,...
                     minPeakThrMultiplier,...
                     maxPeakThrMultiplier,...
                     posPeakThrMultiplier);
-                
             catch
                 spikeTimes = [];
             end
@@ -430,6 +431,7 @@ classdef getSpikesApp < matlab.apps.AppBase
             %   Uniformly sample n_spikes
             spikes2use = round(linspace(2, length(spikeTimes)-2, nSpikes));
             
+            spikeWaveforms = zeros(51, nSpikes);
             for i = 1:nSpikes
                 n = spikeTimes(spikes2use(i));
                 bin = trace(n-10:n+10);
@@ -441,7 +443,7 @@ classdef getSpikesApp < matlab.apps.AppBase
             % %   Align spikes to negative peaks
             % [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, 10, 0);
             
-            aveWaveform = median(spikeWaveforms');
+            aveWaveform = median(spikeWaveforms,2);
         end
         
         function [spikeTrain, filtTrace, threshold] = ...
@@ -536,12 +538,14 @@ classdef getSpikesApp < matlab.apps.AppBase
             
             if exist('varargin', 'var')
                 minPeakThr = -threshold * varargin{1};
-                maxPeakThr = -threshold * varargin{2};
+                %                 maxPeakThr = -threshold * varargin{2};
                 posPeakThr = threshold * varargin{3};
             end
             
-            sFr = [];
-            spikeWaveforms = [];
+            sFr = zeros(1, length(spikeTimes));
+            spikeWaveforms = zeros(51, length(spikeTimes));
+            
+            
             
             for i = 1:length(spikeTimes)
                 
@@ -562,20 +566,24 @@ classdef getSpikesApp < matlab.apps.AppBase
                             newSpikeTime = spikeTimes(i)+pos-win;
                             waveform = trace(newSpikeTime-25:newSpikeTime+25);
                             
-                            sFr(end+1) = newSpikeTime;
-                            spikeWaveforms(:, end+1) = waveform;
+                            sFr(i) = newSpikeTime;
+                            spikeWaveforms(:, i) = waveform;
+                            
                         end
                     else
                         newSpikeTime = spikeTimes(i)+pos-win;
                         waveform = trace(newSpikeTime-25:newSpikeTime+25);
                         
-                        sFr(end+1) = newSpikeTime;
-                        spikeWaveforms(:, end+1) = waveform;
+                        sFr(i) = newSpikeTime;
+                        spikeWaveforms(:, i) = waveform;
+                        
                     end
                 end
             end
             
-            spikeTimes = sFr;
+            spikeTimes = sFr(sFr~=0);
+            spikeWaveforms = spikeWaveforms(:, sFr~=0);
+            
         end
         %%
         
@@ -636,7 +644,6 @@ classdef getSpikesApp < matlab.apps.AppBase
                 % All wavelets cunstructed with wavemngr are type 4 wavelets
                 % without a scaling function
                 wavemngr('add', 'meaCustom','mea', 4, '', 'mother.mat', [-100 100]);
-                wname = 'mea';
             else
                 disp('ERROR: Not a proper wavelet');
                 disp(['Integral = ', num2str(newWaveletIntegral)]);
@@ -751,9 +758,9 @@ classdef getSpikesApp < matlab.apps.AppBase
                 Sigmaj = median(abs(c(i,1:round(W(i)):end) - mean(c(i,:))))/0.6745;
                 Thj = Sigmaj * sqrt(2 * log(Nt));     %hard threshold
                 index = find(abs(c(i,:)) > Thj);
-                if isempty(index) & strcmp(num2str(option),'c')
+                if isempty(index) && strcmp(num2str(option),'c')
                     %do nothing ct=[0];
-                elseif isempty(index) & strcmp(num2str(option),'l')
+                elseif isempty(index) && strcmp(num2str(option),'l')
                     Mj = Thj;
                     %assume at least one spike
                     PS = 1/Nt;
@@ -970,7 +977,7 @@ classdef getSpikesApp < matlab.apps.AppBase
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        function fcn = parse(app, Index,SFr,Wid);
+        function fcn = parse(app, Index,SFr,Wid)
             
             %This is a special function, it takes the vector Index which has
             %the structure [0 0 0 1 1 1 0 ... 0 1 0 ... 0]. This vector was obtained
@@ -1033,12 +1040,12 @@ classdef getSpikesApp < matlab.apps.AppBase
         function updateProgressbar(app, prog)
             wbarColor = [1,0.3089, 0.3089];
             
-            app.DetectspikesButton.Text = {['Detecting spikes...'], ['File: ' num2str(prog) '/' num2str(numel(app.files))]};
+            app.DetectspikesButton.Text = {['Detecting spikes...'], ['File: ' num2str(prog) '/' num2str(numel(app.files_))]};
             app.wbar = permute(repmat(app.DetectspikesButton.BackgroundColor,30,1,700),[1,3,2]);
             app.wbar([1,end],:,:) = 0;
             app.wbar(:,[1,end],:) = 0;
             app.DetectspikesButton.Icon = app.wbar;
-            currentProg = min(round((size(app.wbar,2)-2)*(prog/numel(app.files))),size(app.wbar,2)-2);
+            currentProg = min(round((size(app.wbar,2)-2)*(prog/numel(app.files_))),size(app.wbar,2)-2);
             
             app.DetectspikesButton.Icon(2:end-1, 2:currentProg+1, 1) = wbarColor(1);
             app.DetectspikesButton.Icon(2:end-1, 2:currentProg+1, 2) = wbarColor(2);
@@ -1101,21 +1108,21 @@ classdef getSpikesApp < matlab.apps.AppBase
                 app.dataPath = [uigetdir() '/'];
                 figure(app.UIFigure)
                 app.DatafolderpathEditField.Value = app.dataPath;
-                app.files = dir([app.dataPath '*.mat']);
-                app.filenames = {app.files.name};
+                app.files_ = dir([app.dataPath '*.mat']);
+                app.filenames = {app.files_.name};
                 app.filePath = app.dataPath;
                 
             else
                 app.UIFigure.Visible = 'off';
-                [app.files, app.filePath] = uigetfile('*.mat', 'MultiSelect','on');
+                [app.files_, app.filePath] = uigetfile('*.mat', 'MultiSelect','on');
                 figure(app.UIFigure)
-                app.filenames = app.files;
+                app.filenames = app.files_;
                 app.DatafolderpathEditField.Value = app.filePath;
-                app.files = strcat(app.filePath, app.files);
+                app.files_ = strcat(app.filePath, app.files_);
                 
                 if ~iscell(app.filenames)
                     app.filenames = {app.filenames};
-                    app.files = {app.files};
+                    app.files_ = {app.files_};
                 end
             end
             app.ListoffilesTextArea.Value = app.filenames';
@@ -1158,7 +1165,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                     
                 else
                     option = "list";
-                    getSpikes(app, app.files, app.savePath, option, app.params_);
+                    getSpikes(app, app.files_, app.savePath, option, app.params_);
                 end
                 
                 app.DetectspikesButton.Icon = '';
