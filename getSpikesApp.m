@@ -28,7 +28,7 @@ classdef getSpikesApp < matlab.apps.AppBase
         NoscalesEditFieldLabel          matlab.ui.control.Label
         NospikesEditField               matlab.ui.control.NumericEditField
         NospikesEditFieldLabel          matlab.ui.control.Label
-        MultiplierEditField             matlab.ui.control.NumericEditField
+        MultiplierEditField             matlab.ui.control.EditField
         MultiplierEditFieldLabel        matlab.ui.control.Label
         SaveButton                      matlab.ui.control.Button
         DatafolderpathEditField         matlab.ui.control.EditField
@@ -108,13 +108,10 @@ classdef getSpikesApp < matlab.apps.AppBase
             
             if toolsFlag
                 
-
-                %   Load parameters
-                if ~exist('params', 'var')
-                    load('params.mat');
-                end
                 
+                %   Load parameters
                 multiplier = params.multiplier;
+                thresholds = params.thresholds;
                 nSpikes = params.nSpikes;
                 nScales = params.nScales;
                 wid = params.wid;
@@ -125,6 +122,11 @@ classdef getSpikesApp < matlab.apps.AppBase
                 maxPeakThrMultiplier = params.maxPeakThrMultiplier;
                 posPeakThrMultiplier = params.posPeakThrMultiplier;
                 unit = params.unit;
+                
+                thrList = strcat( 'thr', thresholds);
+                thrList = strrep(thrList, '.', 'p')';
+                wnameList = horzcat(wnameList, thrList);
+                
                 
                 % Get files
                 % Modify the '*string*.mat' wildcard to include a subset of recordings
@@ -206,7 +208,9 @@ classdef getSpikesApp < matlab.apps.AppBase
                                 for wname = 1:numel(wnameList)
                                     
                                     wname = char(wnameList{wname});
+                                    disp(['method: ' strrep(wname, 'p','.')]);
                                     valid_wname = strrep(wname, '.', 'p');
+                                    
                                     spikeWaves = [];
                                     spikeFrames = [];
                                     
@@ -286,7 +290,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                 diary([strrep(date, '-','') '_spike_detection_log']);
                 
             elseif ismember('wavelet_toolbox', toolboxes)
-                error('Signal Processing Toolbox not found'); 
+                error('Signal Processing Toolbox not found');
             elseif ismember('signal_toolbox', toolboxes)
                 error('Wavelet Toolbox not found');
             else
@@ -401,8 +405,17 @@ classdef getSpikesApp < matlab.apps.AppBase
                 spikeWaveforms = [];
                 spikeTimes = [];
                 
-                % Detect spikes
-                spikeTimes = detect_spikes_wavelet(app, trace, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
+                if startsWith(wname, 'thr')
+                    multiplier = strrep(wname, 'p', '.');
+                    multiplier = strrep(multiplier, 'thr', '');
+                    multiplier = str2num(multiplier);
+                    [spikeTrain, ~, ~] = detect_spikes_threshold(app, trace, multiplier, 2, fs, 0);
+                    spikeTimes = find(spikeTrain == 1);
+                else
+                    
+                    % Detect spikes
+                    spikeTimes = detect_spikes_wavelet(app, trace, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
+                end
                 % Align spikes by negative peak & remove artifacts by amplitude
                 [spikeTimes, spikeWaveforms] = align_peaks(app, spikeTimes, trace, win, 1,...
                     minPeakThrMultiplier,...
@@ -1081,7 +1094,11 @@ classdef getSpikesApp < matlab.apps.AppBase
         function SaveButtonPushed(app, event)
             
             params = struct();
-            params.multiplier = app.MultiplierEditField.Value;
+            
+            multipliers = app.MultiplierEditField.Value;
+            params.thresholds = list2mat(app, multipliers, 0);
+            params.multiplier = str2num(multipliers(1));
+            
             params.nSpikes = app.NospikesEditField.Value;
             params.nScales = app.NoscalesEditField.Value;
             
@@ -1423,11 +1440,11 @@ classdef getSpikesApp < matlab.apps.AppBase
             app.NospikesEditFieldLabel.Tooltip = app.NospikesEditField.Tooltip;
             
             % Create MultiplierEditField
-            app.MultiplierEditField = uieditfield(app.GridLayout, 'numeric');
-            app.MultiplierEditField.Limits = [3 5];
+            app.MultiplierEditField = uieditfield(app.GridLayout);
             app.MultiplierEditField.Layout.Row = 2;
             app.MultiplierEditField.Layout.Column = 6;
-            app.MultiplierEditField.Value = 3.5;
+            app.MultiplierEditField.Value = num2str(3.5);
+            app.MultiplierEditField.HorizontalAlignment = 'right';
             app.MultiplierEditField.Tooltip = 'The threshold multiplier used in initial threshold-based spike detection recommended: 3.5';
             
             
