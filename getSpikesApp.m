@@ -1445,7 +1445,7 @@ classdef getSpikesApp < matlab.apps.AppBase
             app.MultiplierEditField.Layout.Column = 6;
             app.MultiplierEditField.Value = num2str(3.5);
             app.MultiplierEditField.HorizontalAlignment = 'right';
-            app.MultiplierEditField.Tooltip = 'The threshold multiplier used in initial threshold-based spike detection recommended: 3.5';
+            app.MultiplierEditField.Tooltip = 'The threshold multiplier used in spike detection. List separated by commas. At least 1 required. First entry will be used to extract waveform to adapt wavelet.';
             
             
             % Create MultiplierEditFieldLabel
