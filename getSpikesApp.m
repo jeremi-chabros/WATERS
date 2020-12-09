@@ -102,180 +102,198 @@ classdef getSpikesApp < matlab.apps.AppBase
                 params;
             end
             
-            %   Load parameters
-            if ~exist('params', 'var')
-                load('params.mat');
-            end
+            tools = license('inuse');
+            toolboxes = {tools.feature};
+            toolsFlag = ismember('wavelet_toolbox', toolboxes) && ismember('signal_toolbox', toolboxes);
             
-            multiplier = params.multiplier;
-            nSpikes = params.nSpikes;
-            nScales = params.nScales;
-            wid = params.wid;
-            grd = params.grd;
-            costList = params.costList;
-            wnameList = params.wnameList;
-            minPeakThrMultiplier = params.minPeakThrMultiplier;
-            maxPeakThrMultiplier = params.maxPeakThrMultiplier;
-            posPeakThrMultiplier = params.posPeakThrMultiplier;
-            unit = params.unit;
-            
-            % Get files
-            % Modify the '*string*.mat' wildcard to include a subset of recordings
-            
-            if exist('option', 'var') && strcmp(option, 'list')
-                files = dataPath;
-                if ~iscell(files)
-                    files = {files};
-                end
-            else
-                files = dir([dataPath '*.mat']);
-            end
-            
-            for recording = 1:numel(files)
+            if toolsFlag
                 
-                updateProgressbar(app, recording);
+
+                %   Load parameters
+                if ~exist('params', 'var')
+                    load('params.mat');
+                end
+                
+                multiplier = params.multiplier;
+                nSpikes = params.nSpikes;
+                nScales = params.nScales;
+                wid = params.wid;
+                grd = params.grd;
+                costList = params.costList;
+                wnameList = params.wnameList;
+                minPeakThrMultiplier = params.minPeakThrMultiplier;
+                maxPeakThrMultiplier = params.maxPeakThrMultiplier;
+                posPeakThrMultiplier = params.posPeakThrMultiplier;
+                unit = params.unit;
+                
+                % Get files
+                % Modify the '*string*.mat' wildcard to include a subset of recordings
                 
                 if exist('option', 'var') && strcmp(option, 'list')
-                    fileName = files{recording};
+                    files = dataPath;
+                    if ~iscell(files)
+                        files = {files};
+                    end
                 else
-                    fileName = [app.filePath files(recording).name];
+                    files = dir([dataPath '*.mat']);
                 end
                 
-                % Load data
-                disp(['Loading ' fileName ' ...']);
-                file = load(fileName);
-                disp('File loaded');
-                
-                data = file.dat;
-                channels = file.channels;
-                fs = file.fs;
-                ttx = contains(fileName, 'TTX');
-                params.duration = length(data)/fs;
-                
-                % Truncate the data if specified
-                if isfield(params, 'subsample_time')
-                    if ~isempty(params.subsample_time)
-                        if params.subsample_time(1) == 1
-                            start_frame = 1;
-                            
-                        else
-                            start_frame = params.subsample_time(1) * fs;
+                for recording = 1:numel(files)
+                    
+                    updateProgressbar(app, recording);
+                    
+                    if exist('option', 'var') && strcmp(option, 'list')
+                        fileName = files{recording};
+                    else
+                        fileName = [app.filePath files(recording).name];
+                    end
+                    
+                    diary on
+                    % Load data
+                    disp(['Loading ' fileName ' ...']);
+                    file = load(fileName);
+                    disp('File loaded');
+                    
+                    data = file.dat;
+                    channels = file.channels;
+                    fs = file.fs;
+                    ttx = contains(fileName, 'TTX');
+                    params.duration = length(data)/fs;
+                    
+                    % Truncate the data if specified
+                    if isfield(params, 'subsample_time')
+                        if ~isempty(params.subsample_time)
+                            if params.subsample_time(1) == 1
+                                start_frame = 1;
+                                
+                            else
+                                start_frame = params.subsample_time(1) * fs;
+                                
+                            end
+                            end_frame = params.subsample_time(2) * fs;
                             
                         end
-                        end_frame = params.subsample_time(2) * fs;
-                        
-                    end
-                    data = data(start_frame:end_frame, :);
-                    params.duration = length(data)/fs;
-                end
-                
-                for L = costList
-                    
-                    if startsWith(fileName, app.filePath)
-                        saveName = [savePath strrep(fileName(1:end-4), app.filePath, '') '_L_' num2str(L) '_spikes.mat'];
-                    else
-                        saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
+                        data = data(start_frame:end_frame, :);
+                        params.duration = length(data)/fs;
                     end
                     
-                    if ~exist(saveName, 'file')
-                        params.L = L;
-                        tic
-                        disp('Detecting spikes...');
-                        disp(['L = ' num2str(L)]);
+                    for L = costList
                         
-                        spikeTimes = cell(1,60);
-                        spikeWaveforms = cell(1,60);
+                        if startsWith(fileName, app.filePath)
+                            saveName = [savePath strrep(fileName(1:end-4), app.filePath, '') '_L_' num2str(L) '_spikes.mat'];
+                        else
+                            saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
+                        end
                         
-                        % Run spike detection
-                        for channel = 1:length(channels)
+                        if ~exist(saveName, 'file')
+                            params.L = L;
+                            tic
+                            disp('Detecting spikes...');
+                            disp(['L = ' num2str(L)]);
                             
-                            spikeStruct = struct();
-                            waveStruct = struct();
-                            trace = data(:, channel);
-                            mad = zeros(1,60);
-                            variance = zeros(1,60);
+                            spikeTimes = cell(1,60);
+                            spikeWaveforms = cell(1,60);
                             
-                            for wname = 1:numel(wnameList)
+                            % Run spike detection
+                            for channel = 1:length(channels)
                                 
-                                wname = char(wnameList{wname});
-                                valid_wname = strrep(wname, '.', 'p');
-                                spikeWaves = [];
-                                spikeFrames = [];
+                                spikeStruct = struct();
+                                waveStruct = struct();
+                                trace = data(:, channel);
+                                mad = zeros(1,60);
+                                variance = zeros(1,60);
                                 
-                                if ~(ismember(channel, grd))
+                                for wname = 1:numel(wnameList)
                                     
-                                    [spikeFrames, spikeWaves, trace] = ...
-                                        detect_spikes_cwt(app, trace,fs,wid,wname,L,nScales, ...
-                                        multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
-                                        maxPeakThrMultiplier, posPeakThrMultiplier);
+                                    wname = char(wnameList{wname});
+                                    valid_wname = strrep(wname, '.', 'p');
+                                    spikeWaves = [];
+                                    spikeFrames = [];
                                     
-                                    waveStruct.(valid_wname) = spikeWaves;
-                                    
-                                    if ~numel(spikeFrames)
-                                        disp(['Electrode ' num2str(channel) ': no spikes detected']);
-                                    end
-                                    
-                                    switch unit
+                                    if ~(ismember(channel, grd))
                                         
-                                        case 'ms'
-                                            spikeStruct.(valid_wname) = spikeFrames/(fs/1000);
-                                        case 's'
-                                            spikeStruct.(valid_wname) = spikeFrames/fs;
-                                        case 'frames'
-                                            spikeStruct.(valid_wname) = spikeFrames;
+                                        [spikeFrames, spikeWaves, trace] = ...
+                                            detect_spikes_cwt(app, trace,fs,wid,wname,L,nScales, ...
+                                            multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
+                                            maxPeakThrMultiplier, posPeakThrMultiplier);
+                                        
+                                        waveStruct.(valid_wname) = spikeWaves;
+                                        
+                                        if ~numel(spikeFrames)
+                                            disp(['Electrode ' num2str(channel) ': no spikes detected']);
+                                        end
+                                        
+                                        switch unit
+                                            
+                                            case 'ms'
+                                                spikeStruct.(valid_wname) = spikeFrames/(fs/1000);
+                                            case 's'
+                                                spikeStruct.(valid_wname) = spikeFrames/fs;
+                                            case 'frames'
+                                                spikeStruct.(valid_wname) = spikeFrames;
+                                        end
+                                        
+                                    else
+                                        waveStruct.(valid_wname) = [];
+                                        spikeStruct.(valid_wname) = [];
                                     end
-                                    
-                                else
-                                    waveStruct.(valid_wname) = [];
-                                    spikeStruct.(valid_wname) = [];
                                 end
+                                
+                                spikeTimes{channel} = spikeStruct;
+                                spikeWaveforms{channel} = waveStruct;
+                                mad(channel) = median(abs(trace - mean(trace))) / 0.6745;
+                                variance(channel) = var(trace);
+                                
                             end
                             
-                            spikeTimes{channel} = spikeStruct;
-                            spikeWaveforms{channel} = waveStruct;
-                            mad(channel) = median(abs(trace - mean(trace))) / 0.6745;
-                            variance(channel) = var(trace);
+                            toc
                             
+                            % Save results
+                            
+                            save_suffix = ['_' strrep(num2str(L), '.', 'p')];
+                            params.save_suffix = save_suffix;
+                            params.fs = fs;
+                            params.variance = variance;
+                            params.mad = mad;
+                            
+                            spikeDetectionResult = struct();
+                            spikeDetectionResult.method = 'CWT';
+                            spikeDetectionResult.params = params;
+                            
+                            disp(['Saving results to: ' saveName]);
+                            
+                            varsList = {'spikeTimes', 'channels', 'spikeDetectionResult', ...
+                                'spikeWaveforms'};
+                            save(saveName, varsList{:}, '-v7.3');
+                            disp(' ');
                         end
-                        
-                        toc
-                        
-                        % Save results
-                        
-                        save_suffix = ['_' strrep(num2str(L), '.', 'p')];
-                        params.save_suffix = save_suffix;
-                        params.fs = fs;
-                        params.variance = variance;
-                        params.mad = mad;
-                        
-                        spikeDetectionResult = struct();
-                        spikeDetectionResult.method = 'CWT';
-                        spikeDetectionResult.params = params;
-                        
-                        disp(['Saving results to: ' saveName]);
-                        
-                        varsList = {'spikeTimes', 'channels', 'spikeDetectionResult', ...
-                            'spikeWaveforms'};
-                        save(saveName, varsList{:}, '-v7.3');
-                        disp(' ');
                     end
+                    
+                    if recording+1 <= numel(files) && numel(files) > 1
+                        txt_val = {app.filenames{recording+1:end}};
+                    else
+                        txt_val = app.filenames;
+                    end
+                    
+                    app.ListoffilesTextArea.Value = txt_val;
+                    txt_val_new = app.AnalysedFilesTextArea.Value;
+                    txt_val_new{end+1} = app.filenames{recording};
+                    app.AnalysedFilesTextArea.Value = txt_val_new;
                 end
+                app.ListoffilesTextArea.Value = {''};
                 
-                if recording+1 <= numel(files) && numel(files) > 1
-                    txt_val = {app.filenames{recording+1:end}};
-                else
-                    txt_val = app.filenames;
-                end
+                diary off
+                diary([strrep(date, '-','') '_spike_detection_log']);
                 
-                app.ListoffilesTextArea.Value = txt_val;
-                txt_val_new = app.AnalysedFilesTextArea.Value;
-                txt_val_new{end+1} = app.filenames{recording};
-                app.AnalysedFilesTextArea.Value = txt_val_new;
+            elseif ismember('wavelet_toolbox', toolboxes)
+                error('Signal Processing Toolbox not found'); 
+            elseif ismember('signal_toolbox', toolboxes)
+                error('Wavelet Toolbox not found');
+            else
+                error('Signal Processing Toolbox and Wavelet Toolbox not found');
             end
-            app.ListoffilesTextArea.Value = {''};
             
         end
-        
         %%
         function [spikeTimes, spikeWaveforms, trace] = detect_spikes_cwt(...
                 app, data, fs, Wid, wname, L, Ns, multiplier, nSpikes, ttx, ...
