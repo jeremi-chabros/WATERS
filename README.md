@@ -89,11 +89,11 @@ Organization of different functions is as follows:
 │       └── detectSpikesWavelet.m
 ```
 
-``
+
 > This method is still under development and troubleshooting and hence frequent `git pull` is recommended:
 > 1. `git stash -A`
 > 2. `git pull`
-``
+
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
