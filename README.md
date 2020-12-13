@@ -68,7 +68,7 @@ Requires MATLAB with Wavelet Toolbox and Signal Processing Toolbox.
 
 
 Preferred method is executing (or calling from command window) `getSpikesApp.m`
-1. Toggle between loading a file (or files) or setting a path to the data folder
+1. Toggle between setting path to the folder with data or loading specific file(s)
 2. Select files/folder 
 3. Select output folder (by default saves in current directory)
 4. Set parameters and save them
