@@ -8,7 +8,7 @@ Spike detection based on continuous wavelet transform with data-driven templates
 
 ## Description
 
-This method is an extension of the method presented in:
+This method is based on:
 
 > Nenadic Z, Burdick JW.\
 Spike detection using the continuous wavelet transform.\
