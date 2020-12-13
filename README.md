@@ -87,19 +87,7 @@ Organization of different functions is as follows:
 │       │   └── detectSpikesThreshold.m
 │       ├── adaptWavelet.m
 │       └── detectSpikesWavelet.m
-```
-![](https://github.com/jeremi-chabros/CWT/blob/master/githubGraphics/setParams_manual.png?raw=true)
-
-Within MATLAB Command Window
-1. `setParams();` – set spike detection parameters (overwrites the `params.mat` file that contains structure `params` with the spike detection parameters\
-or\
-Manually set the parameters using the `setParameters.m` script
-* See the `setParameters.m` or load `params.mat` for more information on the data structure.
-2. `dataPath = [/path/to/dataFolder '/'];` – set path to folder with data (has to end with '/')
-3. `savePath = [/path/to/saveFolder '/'];` – set path to output folder (has to end with '/')
-4. `batchDetectSpikes(dataPath, savePath);` – this is the main analysis function
-
-Note: sometimes `addpath(dataPath)` might be required
+``
 
 > This method is still under development and troubleshooting and hence frequent `git pull` is recommended:
 > 1. `git stash -A`
