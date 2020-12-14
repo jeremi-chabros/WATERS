@@ -1,4 +1,4 @@
-classdef getSpikesApp < matlab.apps.AppBase
+classdef getSpikesApp_edit < matlab.apps.AppBase
     
     % Properties that correspond to app components
     properties (Access = public)
@@ -166,7 +166,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                 end
                 
                 for L = costList
-                    L = log(L)/36.7368; % Convert from commission/omission ratio to actual cost parameter
+                    
                     
                     if startsWith(fileName, app.filePath)
                         saveName = [savePath strrep(fileName(1:end-4), app.filePath, '') '_L_' num2str(L) '_spikes.mat'];
@@ -1093,7 +1093,7 @@ classdef getSpikesApp < matlab.apps.AppBase
             
             costList = app.CostparametersEditField.Value;
             params.costList = list2mat(app, costList, 1);
-            
+
             wnameList = app.WaveletsEditField.Value;
             params.wnameList = list2mat(app, wnameList, 0);
             
