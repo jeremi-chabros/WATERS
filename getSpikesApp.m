@@ -112,7 +112,7 @@ classdef getSpikesApp < matlab.apps.AppBase
             
             thrList = strcat( 'thr', thresholds);
             thrList = strrep(thrList, '.', 'p')';
-            wnameList = horzcat(wnameList, thrList);
+            wnameList = horzcat(wnameList', thrList);
             
             % Get files
             % Modify the '*string*.mat' wildcard to include a subset of recordings
@@ -182,6 +182,8 @@ classdef getSpikesApp < matlab.apps.AppBase
                         
                         spikeTimes = cell(1,60);
                         spikeWaveforms = cell(1,60);
+                        mad = zeros(1,60);
+                        variance = zeros(1,60);
                         
                         % Run spike detection
                         for channel = 1:length(channels)
@@ -189,9 +191,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                             spikeStruct = struct();
                             waveStruct = struct();
                             trace = data(:, channel);
-                            mad = zeros(1,60);
-                            variance = zeros(1,60);
-                            
+
                             for wname = 1:numel(wnameList)
                                 
                                 wname = char(wnameList{wname});
@@ -233,6 +233,10 @@ classdef getSpikesApp < matlab.apps.AppBase
                             spikeWaveforms{channel} = waveStruct;
                             mad(channel) = median(abs(trace - mean(trace))) / 0.6745;
                             variance(channel) = var(trace);
+                           
+                           median(abs(trace - mean(trace))) / 0.6745
+                           var(trace)
+                            
                             
                         end
                         
