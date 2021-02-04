@@ -50,7 +50,7 @@ classdef spikeViewer < matlab.apps.AppBase
         rawData;
         spikeVector;
         subsampleTime = [];
-        spikeIndex;
+        spikeIndex = 1;
         binMs;
         stdTrace;
         yOffset;
@@ -80,7 +80,7 @@ classdef spikeViewer < matlab.apps.AppBase
             
             st = app.spikeVector(app.spikeIndex) - (app.binMs/2)*25;
             en = app.spikeVector(app.spikeIndex) + (app.binMs/2)*25;
-            
+
             plot(app.traceAx, app.trace(st:en), 'k');
             
             xlim(app.traceAx, [1 (app.binMs*25+1)]);
@@ -161,7 +161,7 @@ classdef spikeViewer < matlab.apps.AppBase
             
             % Load raw data
             rawFileName = [fileName(1:strfind(fileName, '_L')-1) '.mat'];
-            rawFilePath = '/Users/jeremi/mea/data/PV-ArchT/';
+            rawFilePath = [pwd filesep];
             rawFile = load([rawFilePath rawFileName]);
             app.rawData = rawFile.dat;
             
@@ -188,9 +188,9 @@ classdef spikeViewer < matlab.apps.AppBase
             app.stdTrace = std(app.trace);
             app.yOffset = max(app.trace)-2;
             
-            app.spikeVector = app.spikeTimes{1, app.channel}.(app.wname);
+            app.spikeVector = app.spikeTimes{app.channel}.(app.wname);
             app.spikeVector = app.spikeVector * 25000;
-            app.spikes = app.spikeWaveforms{1, app.channel}.(app.wname);
+            app.spikes = app.spikeWaveforms{app.channel}.(app.wname);
             
             spikeCount = length(app.spikeVector);
             app.SpikeSlider.Limits = [1, spikeCount];

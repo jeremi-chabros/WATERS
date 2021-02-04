@@ -34,7 +34,7 @@ end
 
 % Calculate the threshold (median absolute deviation)
 % See: https://en.wikipedia.org/wiki/Median_absolute_deviation
-s = (mad(trace, 1)/0.6745);     % Faster than mad(X,1);
+s = median(abs(trace-mean(trace)));     % Faster than mad(X,1);
 m = mean(trace);                % Note: filtered trace is already zero-mean
 threshold = m - multiplier*s;
 

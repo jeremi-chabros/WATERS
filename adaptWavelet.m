@@ -44,7 +44,7 @@ newWaveletSqN = round(newWaveletSqN,10); % Should be zero
 
 % Save the wavelet
 if newWaveletSqN == 1.0000
-    
+
     % Using built-in cwt method requires saving the custom wavelet each
     % time - currently overwriting as there is no reason to retrieve the
     % wavelet

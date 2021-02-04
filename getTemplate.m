@@ -39,10 +39,6 @@ for i = 1:nSpikes
     pos = find(bin == min(bin))-11; % 11 = middle sample in bin
     spikeWaveforms(:,i) = trace(n+pos-25:n+pos+25);
 end
-% 
-% 
-% %   Align spikes to negative peaks
-% [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, 10, 0);
 
 aveWaveform = median(spikeWaveforms');
 end

@@ -68,6 +68,6 @@ for i = 1:length(spikeTimes)
     end
 end
 
-spikeTimes = sFr;
+spikeTimes = unique(sFr);
 end
 
