@@ -1,4 +1,4 @@
-function batchDetectSpikes(dataPath, savePath, option, params)
+function batchDetectSpikes(dataPath, savePath, option, files, params)
 
 % Description:
 %	Master script for spike detection using CWT method. Runs spike
@@ -28,8 +28,9 @@ arguments
     dataPath;
     savePath;
     option;
-    params;
     
+    files;
+    params;
 end
 
 %   Load parameters
@@ -53,7 +54,7 @@ posPeakThrMultiplier = params.posPeakThrMultiplier;
 % Modify the '*string*.mat' wildcard to include a subset of recordings
 
 if exist('option', 'var') && strcmp(option, 'list')
-    files = dataPath;
+    files = files;
 else
     files = dir([dataPath '*.mat']);
 end

@@ -1,145 +1,64 @@
-classdef getSpikesApp < matlab.apps.AppBase
+classdef detectSpikes
     
-    % Properties that correspond to app components
+    % Description:
+    % This script serves as a way to merge all the methods required for
+    % spike detection into one class with hope to facilitate running it
+    % on large datasets with maximal flexibility and minimal user input
+    
     properties (Access = public)
-        UIFigure                        matlab.ui.Figure
-        GridLayout                      matlab.ui.container.GridLayout
-        ParametersLabel                 matlab.ui.control.Label
-        OutputfolderButton              matlab.ui.control.Button
-        LoaddataButton                  matlab.ui.control.Button
-        Switch                          matlab.ui.control.ToggleSwitch
-        MaxvethresholdEditField         matlab.ui.control.NumericEditField
-        MaxvethresholdEditFieldLabel    matlab.ui.control.Label
-        MaxvethresholdEditField_2       matlab.ui.control.NumericEditField
-        MaxvethresholdEditField_2Label  matlab.ui.control.Label
-        MinvethresholdEditField         matlab.ui.control.NumericEditField
-        MinvethresholdEditFieldLabel    matlab.ui.control.Label
-        SubsamplingEditField            matlab.ui.control.EditField
-        SubsamplingEditFieldLabel       matlab.ui.control.Label
-        WaveletsEditField               matlab.ui.control.EditField
-        WaveletsEditFieldLabel          matlab.ui.control.Label
-        CostparametersEditField         matlab.ui.control.EditField
-        CostparametersEditFieldLabel    matlab.ui.control.Label
-        GroundedEditField               matlab.ui.control.EditField
-        GroundedEditFieldLabel          matlab.ui.control.Label
-        WidthmsEditField                matlab.ui.control.EditField
-        WidthmsEditFieldLabel           matlab.ui.control.Label
-        NoscalesEditField               matlab.ui.control.NumericEditField
-        NoscalesEditFieldLabel          matlab.ui.control.Label
-        NospikesEditField               matlab.ui.control.NumericEditField
-        NospikesEditFieldLabel          matlab.ui.control.Label
-        MultiplierEditField             matlab.ui.control.EditField
-        MultiplierEditFieldLabel        matlab.ui.control.Label
-        SaveButton                      matlab.ui.control.Button
-        DatafolderpathEditField         matlab.ui.control.EditField
-        SavefolderpathEditField         matlab.ui.control.EditField
-        ListoffilesTextAreaLabel        matlab.ui.control.Label
-        ListoffilesTextArea             matlab.ui.control.TextArea
-        AnalysedFilesTextAreaLabel      matlab.ui.control.Label
-        AnalysedFilesTextArea           matlab.ui.control.TextArea
-        DetectspikesButton              matlab.ui.control.Button
-        SpiketimeunitDropDownLabel      matlab.ui.control.Label
-        SpiketimeunitDropDown           matlab.ui.control.DropDown
+        dataPath; % required: path to the folder containing recordings
+        savePath; % required: path to the desired output destination
+        params;   % required: parameters for spike detection; see:
+        option;   % optional
+        files;    % optional If passing path (NOT files)
     end
     
-    
-    properties (Access = private)
-        dataPath;
-        files_;
-        savePath;
-        params_;
-        wbar;
-        step = 0;
-        filePath;
-        filenames;
-    end
-    
-    methods (Access = private)
-        % Code that executes after component creation
-        function startupFcn(app)
-            'costam'
-        end
-        function r = list2mat(app, str, flag)
-            str = strrep(str, ' ', '');
-            str = split(str, ',');
-            if flag
-                for i = 1:numel(str)
-                    r(i) = str2num(str{i});
-                end
-            else
-                r = str;
-            end
-        end
+    methods (Access = public)
         
-        function getSpikes(app, dataPath, savePath, option, params)
+        function getSpikes(self)
             
             % Description:
             %	Master script for spike detection using CWT method. Runs spike
             %	detection through recordings, cost parameters, electrodes, and
             %	wavelets.
             
-            % INPUT:
-            %
-            %   dataPath: path (ending with '/') to the folder containing data to be
-            %             analyzed
-            %
-            %   savePath: path (ending with '/') to the folder where spike detection
-            %             output will be saved
-            %
-            %   option: pass either path to files ('path') or list of files ('list');
-            %
-            %   params: [optional] argument to pass structure containing parameters;
-            %           otherwise, run setParams() first to set parameters
-            
-            arguments
-                app;
-                dataPath;
-                savePath;
-                option;
-                params;
+            if ~endsWith(self.dataPath, filesep)
+                self.dataPath = [self.dataPath filesep];
             end
+            addpath(self.dataPath);
             
-            %   Load parameters
-            multiplier = params.multiplier;
-            thresholds = params.thresholds;
-            nSpikes = params.nSpikes;
-            nScales = params.nScales;
-            wid = params.wid;
-            grd = params.grd;
-            costList = params.costList;
-            wnameList = params.wnameList;
-            minPeakThrMultiplier = params.minPeakThrMultiplier;
-            maxPeakThrMultiplier = params.maxPeakThrMultiplier;
-            posPeakThrMultiplier = params.posPeakThrMultiplier;
-            unit = params.unit;
+            % TODO: get rid of this atrocity
+            multiplier = self.params.multiplier;
+            thresholds = self.params.thresholds;
+            grd = self.params.grd;
+            costList = self.params.costList;
+            wnameList = self.params.wnameList;
+            unit = self.params.unit;
             
+            % struct fields cannot contain dots
             thrList = strcat( 'thr', thresholds);
             thrList = strrep(thrList, '.', 'p')';
             wnameList = horzcat(wnameList', thrList);
             
             % Get files
             % Modify the '*string*.mat' wildcard to include a subset of recordings
-            
-            if exist('option', 'var') && strcmp(option, 'list')
-                files = dataPath;
-                if ~iscell(files)
-                    files = {files};
+            % TODO: maybe pass the file spec wild card as an argument
+            if isprop(self, 'option') && strcmp(self.option, 'list') && isprop(self, 'files')
+                if ~iscell(self.files)
+                    self.files = {self.files};
                 end
             else
-                files = dir([dataPath '*.mat']);
+                self.files = dir([self.dataPath '*.mat']);
             end
             
-            for recording = 1:numel(files)
+            for recording = 1:numel(self.files)
                 
-                updateProgressbar(app, recording);
-                
-                if exist('option', 'var') && strcmp(option, 'list')
-                    fileName = files{recording};
+                if isprop(self, 'option') && strcmp(self.option, 'list')
+                    fileName = self.files{recording};
                 else
-                    fileName = [app.filePath files(recording).name];
+                    fileName = [self.dataPath self.files(recording).name];
                 end
                 
-                diary('on');
                 % Load data
                 disp(['Loading ' fileName ' ...']);
                 file = load(fileName);
@@ -148,41 +67,46 @@ classdef getSpikesApp < matlab.apps.AppBase
                 data = file.dat;
                 channels = file.channels;
                 fs = file.fs;
-                ttx = contains(fileName, 'TTX');
-                params.duration = length(data)/fs;
+                self.params.fs = fs;
+                self.params.ttx = contains(fileName, 'TTX');
+                self.params.duration = length(data)/fs;
                 
-                % Truncate the data if specified
-                if isfield(params, 'subsample_time')
-                    if ~isempty(params.subsample_time)
-                        if params.subsample_time(1) == 1
+                % Truncate the data if desired
+                if isfield(self.params, 'subsample_time')
+                    if ~isempty(self.params.subsample_time)
+                        if self.params.subsample_time(1) == 1
                             start_frame = 1;
                             
                         else
-                            start_frame = params.subsample_time(1) * fs;
+                            start_frame = self.params.subsample_time(1) * fs;
                             
                         end
-                        end_frame = params.subsample_time(2) * fs;
+                        end_frame = self.params.subsample_time(2) * fs;
                         
                     end
                     data = data(start_frame:end_frame, :);
-                    params.duration = length(data)/fs;
+                    self.params.duration = length(data)/fs;
                 end
                 
                 for L = costList
+                    % Dunno if this is the way to go... At this point it's
+                    % more intuitive to just specify L as an absolute value
+                    % as opposed to a ratio
                     L = log(L)/36.7368; % Convert from commission/omission ratio to actual cost parameter
                     
-                    if startsWith(fileName, app.filePath)
-                        saveName = [savePath strrep(fileName(1:end-4), app.filePath, '') '_L_' num2str(L) '_spikes.mat'];
+                    if startsWith(fileName, self.dataPath)
+                        saveName = [self.savePath strrep(fileName(1:end-4), self.dataPath, '') '_L_' num2str(L) '_spikes.mat'];
                     else
-                        saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
+                        saveName = [self.savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
                     end
                     
-                    if ~exist(saveName, 'file')
-                        params.L = L;
+                    if ~exist(saveName, 'file') % Avoid running if file already exists
+                        self.params.L = L;
                         tic
                         disp('Detecting spikes...');
                         disp(['L = ' num2str(L)]);
                         
+                        % Pre-allocate for your own good
                         spikeTimes = cell(1,60);
                         spikeWaveforms = cell(1,60);
                         mad = zeros(1,60);
@@ -191,6 +115,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                         % Run spike detection
                         for channel = 1:length(channels)
                             
+                            % Pre-allocate again
                             spikeStruct = struct();
                             waveStruct = struct();
                             trace = data(:, channel);
@@ -205,10 +130,8 @@ classdef getSpikesApp < matlab.apps.AppBase
                                 
                                 if ~(ismember(channel, grd))
                                     
-                                    [spikeFrames, spikeWaves, trace] = ...
-                                        detect_spikes_cwt(app, trace,fs,wid,wname,L,nScales, ...
-                                        multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
-                                        maxPeakThrMultiplier, posPeakThrMultiplier);
+                                    [spikeFrames, spikeWaves, trace] = detect_spikes_cwt(...
+                                        self, trace, wname, L, multiplier);
                                     
                                     waveStruct.(valid_wname) = spikeWaves;
                                     
@@ -217,7 +140,6 @@ classdef getSpikesApp < matlab.apps.AppBase
                                     end
                                     
                                     switch unit
-                                        
                                         case 'ms'
                                             spikeStruct.(valid_wname) = spikeFrames/(fs/1000);
                                         case 's'
@@ -236,25 +158,20 @@ classdef getSpikesApp < matlab.apps.AppBase
                             spikeWaveforms{channel} = waveStruct;
                             mad(channel) = median(abs(trace - mean(trace))) / 0.6745;
                             variance(channel) = var(trace);
-                            
-                            median(abs(trace - mean(trace))) / 0.6745
-                            var(trace)
-                            
-                            
                         end
                         
                         toc
                         
                         % Save results
                         save_suffix = ['_' strrep(num2str(L), '.', 'p')];
-                        params.save_suffix = save_suffix;
-                        params.fs = fs;
-                        params.variance = variance;
-                        params.mad = mad;
+                        self.params.save_suffix = save_suffix;
+                        self.params.fs = fs;
+                        self.params.variance = variance;
+                        self.params.mad = mad;
                         
                         spikeDetectionResult = struct();
                         spikeDetectionResult.method = 'CWT';
-                        spikeDetectionResult.params = params;
+                        spikeDetectionResult.params = self.params;
                         
                         disp(['Saving results to: ' saveName]);
                         
@@ -264,28 +181,11 @@ classdef getSpikesApp < matlab.apps.AppBase
                         disp(' ');
                     end
                 end
-                
-                if recording+1 <= numel(files) && numel(files) > 1
-                    txt_val = {app.filenames{recording+1:end}};
-                else
-                    txt_val = app.filenames;
-                end
-                
-                app.ListoffilesTextArea.Value = txt_val;
-                txt_val_new = app.AnalysedFilesTextArea.Value;
-                txt_val_new{end+1} = app.filenames{recording};
-                app.AnalysedFilesTextArea.Value = txt_val_new;
             end
-            
-            diary('off');
-            diaryName = [strrep(date, '-','') '_spike_detection_log'];
-            diary(diaryName);
-            app.ListoffilesTextArea.Value = {''};
         end
-        
+%%        
         function [spikeTimes, spikeWaveforms, trace] = detect_spikes_cwt(...
-                app, data, fs, Wid, wname, L, Ns, multiplier, nSpikes, ttx, ...
-                minPeakThrMultiplier, maxPeakThrMultiplier, posPeakThrMultiplier)
+                self, data, wname, L, multiplier)
             
             % Description:
             %
@@ -354,20 +254,39 @@ classdef getSpikesApp < matlab.apps.AppBase
             %   github.com/jeremi-chabros
             
             
-            refPeriod = 2; % Only used by the threshold method
+            fs = self.params.fs;
+            Wid = self.params.wid;
+            Ns = self.params.ns;
+            nSpikes = self.params.nSpikes;
+            ttx = self.params.ttx;
+            minPeakThrMultiplier = self.params.minPeakThrMultiplier;
+            maxPeakThrMultiplier = self.params.maxPeakThrMultiplier;
+            posPeakThrMultiplier = self.params.posPeakThrMultiplier;
+            
+            refPeriod = 0.2; % Only used by the threshold method
+            
+            % TODO: the workaround here would be to ALWAYS run alignPeaks.m
+            % after any spike detection method and return:
+            % unique(spikeTimes) instead of just spikeTimes
             
             % Filter signal
             try
-                lowpass = 600;
-                highpass = 8000;
+                lowpass = 600;   % TODO: look into this
+                highpass = 8000; % and this
                 wn = [lowpass highpass] / (fs / 2);
-                filterOrder = 3;
+                filterOrder = 3; % Used to be smth different, dunno anymore
                 [b, a] = butter(filterOrder, wn);
                 trace = filtfilt(b, a, double(data));
             catch
+              % Note: some errors will appear irrespective of the
+              % appropriate toolboxes being installed. Didn't bother to
+              % code for all the cases and the same message will be
+              % returned...
                 error('Signal Processing Toolbox not found');
             end
             
+          % NOTE: 'win' also specifies the number of frames before/after
+          % spike to be saved. Smaller 'win' --> shorter waveform 
             win = 25;   % [frames]
             
             if strcmp(wname, 'mea') && ~ttx
@@ -375,14 +294,14 @@ classdef getSpikesApp < matlab.apps.AppBase
                 %   Use threshold-based spike detection to obtain the median waveform
                 %   from nSpikes
                 try
-                    [aveWaveform, ~] = get_template(app, trace, multiplier, refPeriod, fs, nSpikes);
+                    [aveWaveform, ~] = get_template(self, trace, multiplier, refPeriod, fs, nSpikes);
                 catch
                     warning('Failed to obtain mean waveform');
                 end
                 
                 %   Adapt custom wavelet from the waveform obtained above
                 try
-                    adapt_wavelet(app, aveWaveform);
+                    adapt_wavelet(self, aveWaveform);
                 catch
                     warning('Failed to adapt custom wavelet');
                 end
@@ -397,16 +316,16 @@ classdef getSpikesApp < matlab.apps.AppBase
                     multiplier = strrep(wname, 'p', '.');
                     multiplier = strrep(multiplier, 'thr', '');
                     multiplier = str2num(multiplier);
-                    [spikeTrain, ~, ~] = detect_spikes_threshold(app, trace, multiplier, 2, fs, 0);
+                    [spikeTrain, ~, ~] = detect_spikes_threshold(self, trace, multiplier, 2, fs, 0);
                     spikeTimes = find(spikeTrain == 1);
                 else
                     
                     % Detect spikes with wavelet method
-                    spikeTimes = detect_spikes_wavelet(app, trace, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
+                    spikeTimes = detect_spikes_wavelet(self, trace, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
                 end
                 
                 % Align spikes by negative peak & remove artifacts by amplitude
-                [spikeTimes, spikeWaveforms] = align_peaks(app, spikeTimes, trace, win, 1,...
+                [spikeTimes, spikeWaveforms] = align_peaks(self, spikeTimes, trace, win, 1,...
                     minPeakThrMultiplier,...
                     maxPeakThrMultiplier,...
                     posPeakThrMultiplier);
@@ -416,8 +335,8 @@ classdef getSpikesApp < matlab.apps.AppBase
         end
         
         
-        %%
-        function [aveWaveform, spikeTimes] = get_template(app, trace, multiplier, refPeriod, fs, nSpikes)
+%%
+        function [aveWaveform, spikeTimes] = get_template(self, trace, multiplier, refPeriod, fs, nSpikes)
             
             % Description:
             %   Obtain median waveform from spikes detected with threshold method
@@ -439,8 +358,9 @@ classdef getSpikesApp < matlab.apps.AppBase
             %   email: jjc80@cam.ac.uk
             %   github.com/jeremi-chabros
             
-            [spikeTrain, ~, ~] = detect_spikes_threshold(app, trace, multiplier, refPeriod, fs, 0);
+            [spikeTrain, ~, ~] = detect_spikes_threshold(self, trace, multiplier, refPeriod, fs, 0);
             spikeTimes = find(spikeTrain == 1);
+            
             
             %   If fewer spikes than specified - use the maximum number possible
             if  numel(spikeTimes) < nSpikes
@@ -449,20 +369,20 @@ classdef getSpikesApp < matlab.apps.AppBase
             
             %   Uniformly sample n_spikes
             spikes2use = round(linspace(2, length(spikeTimes)-2, nSpikes));
-            
-            spikeWaveforms = zeros(51, nSpikes);
-            for i = 1:nSpikes
-                n = spikeTimes(spikes2use(i));
-                bin = trace(n-10:n+10);
-                pos = find(bin == min(bin))-11; % 11 = middle sample in bin
-                spikeWaveforms(:,i) = trace(n+pos-25:n+pos+25);
-            end
-            
+            spikes2use = spikeTimes(spikes2use);
+            [spikeTimes, spikeWaveforms] = align_peaks(self, spikes2use, trace, 25, 0);
+            %             spikeWaveforms = zeros(51, nSpikes);
+            %             for i = 1:nSpikes
+            %                 n = spikeTimes(spikes2use(i));
+            %                 bin = trace(n-10:n+10);
+            %                 pos = find(bin == min(bin))-11; % 11 = middle sample in bin
+            %                 spikeWaveforms(:,i) = trace(n+pos-25:n+pos+25);
+            %             end
             aveWaveform = median(spikeWaveforms,2);
         end
-        
-        function [spikeTrain, filtTrace, threshold] = ...
-                detect_spikes_threshold(app, trace, multiplier, refPeriod, fs, filterFlag)
+%%
+        function [spikeTrain, filtTrace, threshold] = detect_spikes_threshold(self,...
+                                                      trace, multiplier, refPeriod, fs, filterFlag)
             
             % Description:
             %   Threshold-based spike detection
@@ -486,6 +406,8 @@ classdef getSpikesApp < matlab.apps.AppBase
             %   github.com/jeremi-chabros
             
             %   Filtering
+            %   Note: Filtering step should probably be added as a standalone
+            %   function in the future
             if filterFlag
                 lowpass = 600;
                 highpass = 8000;
@@ -521,9 +443,9 @@ classdef getSpikesApp < matlab.apps.AppBase
             end
             filtTrace = trace;
         end
-        
-        function [spikeTimes, spikeWaveforms] = align_peaks(app, spikeTimes, trace, win,...
-                artifactFlg, varargin)
+%%
+        function [spikeTimes, spikeWaveforms] = align_peaks(self, spikeTimes, trace, win,...
+                                                artifactFlg, varargin)
             
             % Description:
             %   Aligns spikes by negative peaks and removes artifacts by amplitude
@@ -595,15 +517,14 @@ classdef getSpikesApp < matlab.apps.AppBase
                 end
             end
             
+            % Clever pre-allocation & logical indexing made it a lot faster
+            % than using (end+1) indexing in the loop above
             spikeTimes = sFr(sFr~=0);
             spikeWaveforms = spikeWaveforms(:, sFr~=0);
             
         end
-        %%
-        
-        
-        
-        function [newWaveletIntegral, newWaveletSqN] = adapt_wavelet(app, aveWaveform)
+ %%
+        function [newWaveletIntegral, newWaveletSqN] = adapt_wavelet(self, aveWaveform)
             
             % Description:
             %   Uses spike waveform to adapt custom wavelet that can be used for
@@ -648,7 +569,7 @@ classdef getSpikesApp < matlab.apps.AppBase
             newWaveletSqN = round(newWaveletSqN,10); % Should be zero
             
             % Save the wavelet
-            if newWaveletSqN == 1.0000
+            if newWaveletSqN == 1.0000 % Ugly but it is what it is
                 
                 % Using built-in cwt method requires saving the custom wavelet each
                 % time - currently overwriting as there is no reason to retrieve the
@@ -666,10 +587,9 @@ classdef getSpikesApp < matlab.apps.AppBase
             end
         end
         
-        %%
-        
+%%
         function spikeFrames = detect_spikes_wavelet(...
-                app, Signal, SFr, Wid, Ns, option, L, wname, PltFlg, CmtFlg)
+                               self, Signal, SFr, Wid, Ns, option, L, wname, PltFlg, CmtFlg)
             
             % DETECT_SPIKES_WAVELET wavelet based algorithm for detection of transients
             % from neural data.
@@ -748,7 +668,7 @@ classdef getSpikesApp < matlab.apps.AppBase
             Nt = length(Signal);      %# of time samples
             
             %define relevant scales for detection
-            W = determine_scales(app, wname,Wid,SFr,Ns);
+            W = determine_scales(self, wname,Wid,SFr,Ns);
             
             %initialize the matrix of thresholded coefficients
             ct = zeros(Ns,Nt);
@@ -810,7 +730,7 @@ classdef getSpikesApp < matlab.apps.AppBase
                 Io = Index;
             end
             
-            spikeFrames = parse(app, Index,SFr,Wid);
+            spikeFrames = parse(self, Index,SFr,Wid);
             
             if PltFlg == 1
                 close all
@@ -849,7 +769,7 @@ classdef getSpikesApp < matlab.apps.AppBase
         end
         
         
-        function Scale = determine_scales(app, wname,Wid,SFr,Ns)
+        function Scale = determine_scales(self, wname,Wid,SFr,Ns)
             
             %Ns - # of scales
             
@@ -996,12 +916,12 @@ classdef getSpikesApp < matlab.apps.AppBase
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        function fcn = parse(app, Index,SFr,Wid)
+        function fcn = parse(self, Index,SFr,Wid)
             
             %This is a special function, it takes the vector Index which has
             %the structure [0 0 0 1 1 1 0 ... 0 1 0 ... 0]. This vector was obtained
             %by coincidence detection of certain events (lower and upper threshold
-            %crossing for threshold detection, and the appearance of coefficients at
+            %crossing for threshold detection, and the selfearance of coefficients at
             %different scales for wavelet detection).
             %The real challenge here is to merge multiple 1's that belong to the same
             %spike into one event and to locate that event
@@ -1055,510 +975,5 @@ classdef getSpikesApp < matlab.apps.AppBase
             fcn = TE;
         end
         
-        function updateProgressbar(app, prog)
-            wbarColor = [1,0.3089, 0.3089];
-            
-            app.DetectspikesButton.Text = {['Detecting spikes...'], ['File: ' num2str(prog) filesep num2str(numel(app.files_))]};
-            app.wbar = permute(repmat(app.DetectspikesButton.BackgroundColor,30,1,700),[1,3,2]);
-            app.wbar([1,end],:,:) = 0;
-            app.wbar(:,[1,end],:) = 0;
-            app.DetectspikesButton.Icon = app.wbar;
-            currentProg = min(round((size(app.wbar,2)-2)*(prog/numel(app.files_))),size(app.wbar,2)-2);
-            
-            app.DetectspikesButton.Icon(2:end-1, 2:currentProg+1, 1) = wbarColor(1);
-            app.DetectspikesButton.Icon(2:end-1, 2:currentProg+1, 2) = wbarColor(2);
-            app.DetectspikesButton.Icon(2:end-1, 2:currentProg+1, 3) = wbarColor(3);
-            pause(.3)
-        end
-        
-    end
-    
-    
-    % Callbacks that handle component events
-    methods (Access = private)
-        
-        % Button pushed function: SaveButton
-        function SaveButtonPushed(app, event)
-            
-            params = struct();
-            
-            multipliers = app.MultiplierEditField.Value;
-            params.thresholds = list2mat(app, multipliers, 0);
-            params.multiplier = str2num(multipliers(1));
-            
-            params.nSpikes = app.NospikesEditField.Value;
-            params.nScales = app.NoscalesEditField.Value;
-            
-            wid = app.WidthmsEditField.Value;
-            params.wid = list2mat(app, wid, 1);
-            
-            params.grd = [];
-            if app.GroundedEditField.Value
-                grd = app.GroundedEditField.Value;
-                params.grd = list2mat(app, grd, 1);
-            end
-            
-            costList = app.CostparametersEditField.Value;
-            params.costList = list2mat(app, costList, 1);
-            
-            wnameList = app.WaveletsEditField.Value;
-            params.wnameList = list2mat(app, wnameList, 0);
-            
-            if app.SubsamplingEditField.Value
-                subsample_time = app.SubsamplingEditField.Value;
-                params.subsample_time = list2mat(app, subsample_time, 1);
-            end
-            
-            params.minPeakThrMultiplier = app.MinvethresholdEditField.Value;
-            params.maxPeakThrMultiplier = app.MaxvethresholdEditField.Value;
-            params.posPeakThrMultiplier = app.MaxvethresholdEditField_2.Value;
-            
-            unit = strrep(app.SpiketimeunitDropDown.Value, '[', '');
-            unit = strrep(unit, ']', '');
-            params.unit = unit;
-            
-            app.params_ = params;
-            
-            app.step = app.step + 1;
-            save('params.mat', 'params');
-        end
-        
-        % Button pushed function: LoaddataButton
-        function LoaddataButtonPushed(app, event)
-            
-            if strcmp(app.Switch.Value, 'Folders')
-                app.UIFigure.Visible = 'off';
-                app.dataPath = [uigetdir() filesep];
-                figure(app.UIFigure)
-                app.DatafolderpathEditField.Value = app.dataPath;
-                app.files_ = dir([app.dataPath '*.mat']);
-                app.filenames = {app.files_.name};
-                app.filePath = app.dataPath;
-                
-            else
-                app.UIFigure.Visible = 'off';
-                [app.files_, app.filePath] = uigetfile('*.mat', 'MultiSelect','on');
-                figure(app.UIFigure)
-                app.filenames = app.files_;
-                app.DatafolderpathEditField.Value = app.filePath;
-                app.files_ = strcat(app.filePath, app.files_);
-                
-                if ~iscell(app.filenames)
-                    app.filenames = {app.filenames};
-                    app.files_ = {app.files_};
-                end
-            end
-            app.ListoffilesTextArea.Value = app.filenames';
-            app.step = app.step + 1;
-        end
-        
-        % Value changed function: Switch
-        function SwitchValueChanged(app, event)
-            value = app.Switch.Value;
-        end
-        
-        % Button pushed function: OutputfolderButton
-        function OutputfolderButtonPushed(app, event)
-            app.UIFigure.Visible = 'off';
-            app.savePath = [uigetdir() filesep];
-            figure(app.UIFigure)
-            app.SavefolderpathEditField.Value = app.savePath;
-        end
-        
-        % Button pushed function: DetectspikesButton
-        function DetectspikesButtonPushed(app, event)
-            
-            if app.step >= 2
-                app.DetectspikesButton.Text = {['Detecting spikes...'], [' ']};
-                app.DetectspikesButton.IconAlignment = 'bottom';
-                app.wbar = permute(repmat(app.DetectspikesButton.BackgroundColor,30,1,700),[1,3,2]);
-                app.wbar([1,end],:,:) = 0;
-                app.wbar(:,[1,end],:) = 0;
-                app.DetectspikesButton.Icon = app.wbar;
-                updateProgressbar(app, 0);
-                
-                app.ListoffilesTextArea.FontColor = [0.6353 0.0784 0.1843];
-                app.ListoffilesTextArea.FontWeight = 'bold';
-                
-                
-                if strcmp(app.Switch.Value, 'Folders')
-                    option = "path";
-                    
-                    getSpikes(app, app.dataPath, app.savePath, option, app.params_);
-                    
-                else
-                    option = "list";
-                    getSpikes(app, app.files_, app.savePath, option, app.params_);
-                end
-                
-                app.DetectspikesButton.Icon = '';
-                app.DetectspikesButton.Text = 'Detection complete';
-            end
-        end
-        
-        % Value changed function: DatafolderpathEditField
-        function DatafolderpathEditFieldValueChanged(app, event)
-            app.dataPath = app.DatafolderpathEditField.Value;
-        end
-        
-        % Value changed function: SavefolderpathEditField
-        function SavefolderpathEditFieldValueChanged(app, event)
-            app.savePath = app.SavefolderpathEditField.Value;
-        end
-        
-        % Value changed function: SpiketimeunitDropDown
-        function SpiketimeunitDropDownValueChanged(app, event)
-            value = app.SpiketimeunitDropDown.Value;
-            
-        end
-    end
-    
-    % Component initialization
-    methods (Access = private)
-        
-        % Create UIFigure and components
-        function createComponents(app)
-            
-            % Create UIFigure and hide until all components are created
-            app.UIFigure = uifigure('Visible', 'off');
-            app.UIFigure.Position = [300 300 812 438];
-            app.UIFigure.Name = 'MATLAB App';
-            
-            % Create GridLayout
-            app.GridLayout = uigridlayout(app.UIFigure);
-            app.GridLayout.ColumnWidth = {70, 85, 334, 20, 100, 100, 20};
-            app.GridLayout.RowHeight = {20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20};
-            app.GridLayout.ColumnSpacing = 11.8571428571429;
-            app.GridLayout.Padding = [11.8571428571429 10 11.8571428571429 10];
-            
-            % Create ParametersLabel
-            app.ParametersLabel = uilabel(app.GridLayout);
-            app.ParametersLabel.HorizontalAlignment = 'center';
-            app.ParametersLabel.FontSize = 14;
-            app.ParametersLabel.FontWeight = 'bold';
-            app.ParametersLabel.Layout.Row = 1;
-            app.ParametersLabel.Layout.Column = 6;
-            app.ParametersLabel.Text = 'Parameters';
-            app.ParametersLabel.Tooltip = 'Set spike detection parameters and click "save"';
-            
-            % Create OutputfolderButton
-            app.OutputfolderButton = uibutton(app.GridLayout, 'push');
-            app.OutputfolderButton.ButtonPushedFcn = createCallbackFcn(app, @OutputfolderButtonPushed, true);
-            app.OutputfolderButton.Layout.Row = 3;
-            app.OutputfolderButton.Layout.Column = 2;
-            app.OutputfolderButton.Text = 'Output folder';
-            app.OutputfolderButton.Tooltip = 'Set path to the folder where spike detection output will be saved';
-            
-            % Create LoaddataButton
-            app.LoaddataButton = uibutton(app.GridLayout, 'push');
-            app.LoaddataButton.ButtonPushedFcn = createCallbackFcn(app, @LoaddataButtonPushed, true);
-            app.LoaddataButton.Layout.Row = 2;
-            app.LoaddataButton.Layout.Column = 2;
-            app.LoaddataButton.Text = 'Load data';
-            app.LoaddataButton.Tooltip = 'Select files or set path to the folder with data';
-            
-            
-            % Create Switch
-            app.Switch = uiswitch(app.GridLayout, 'toggle');
-            app.Switch.Items = {'Folders', 'Files'};
-            app.Switch.ValueChangedFcn = createCallbackFcn(app, @SwitchValueChanged, true);
-            app.Switch.Layout.Row = [2 4];
-            app.Switch.Layout.Column = 1;
-            app.Switch.Value = 'Folders';
-            app.Switch.Tooltip = '"Folders" enables you to choose a folder with data, "Files" allows choosing single or multiple files';
-            
-            % Create MaxvethresholdEditField
-            app.MaxvethresholdEditField = uieditfield(app.GridLayout, 'numeric');
-            app.MaxvethresholdEditField.Layout.Row = 12;
-            app.MaxvethresholdEditField.Layout.Column = 6;
-            app.MaxvethresholdEditField.Value = 5;
-            app.MaxvethresholdEditField.Tooltip = 'Threshold multiplier that specifies the maximum positive peak amplitude of a spike';
-            
-            % Create MaxvethresholdEditFieldLabel
-            app.MaxvethresholdEditFieldLabel = uilabel(app.GridLayout);
-            app.MaxvethresholdEditFieldLabel.HorizontalAlignment = 'right';
-            app.MaxvethresholdEditFieldLabel.Layout.Row = 12;
-            app.MaxvethresholdEditFieldLabel.Layout.Column = 5;
-            app.MaxvethresholdEditFieldLabel.Text = 'Max +ve threshold';
-            app.MaxvethresholdEditFieldLabel.Tooltip = app.MaxvethresholdEditField.Tooltip;
-            
-            % Create MaxvethresholdEditField_2
-            app.MaxvethresholdEditField_2 = uieditfield(app.GridLayout, 'numeric');
-            app.MaxvethresholdEditField_2.Layout.Row = 11;
-            app.MaxvethresholdEditField_2.Layout.Column = 6;
-            app.MaxvethresholdEditField_2.Value = 10;
-            app.MaxvethresholdEditField_2.Tooltip = 'Threshold multiplier that specifies the maximum negative peak amplitude of a spike';
-            
-            % Create MaxvethresholdEditField_2Label
-            app.MaxvethresholdEditField_2Label = uilabel(app.GridLayout);
-            app.MaxvethresholdEditField_2Label.HorizontalAlignment = 'right';
-            app.MaxvethresholdEditField_2Label.Layout.Row = 11;
-            app.MaxvethresholdEditField_2Label.Layout.Column = 5;
-            app.MaxvethresholdEditField_2Label.Text = 'Max -ve threshold';
-            app.MaxvethresholdEditField_2Label.Tooltip = app.MaxvethresholdEditField_2.Tooltip;
-            
-            % Create MinvethresholdEditField
-            app.MinvethresholdEditField = uieditfield(app.GridLayout, 'numeric');
-            app.MinvethresholdEditField.Layout.Row = 10;
-            app.MinvethresholdEditField.Layout.Column = 6;
-            app.MinvethresholdEditField.Value = 2;
-            app.MinvethresholdEditField.Tooltip = 'Threshold multiplier that specifies the minimum negative peak amplitude of a spike';
-            
-            % Create MinvethresholdEditFieldLabel
-            app.MinvethresholdEditFieldLabel = uilabel(app.GridLayout);
-            app.MinvethresholdEditFieldLabel.HorizontalAlignment = 'right';
-            app.MinvethresholdEditFieldLabel.Layout.Row = 10;
-            app.MinvethresholdEditFieldLabel.Layout.Column = 5;
-            app.MinvethresholdEditFieldLabel.Text = 'Min -ve threshold';
-            app.MinvethresholdEditFieldLabel.Tooltip = app.MinvethresholdEditField.Tooltip;
-            
-            % Create SubsamplingEditField
-            app.SubsamplingEditField = uieditfield(app.GridLayout, 'text');
-            app.SubsamplingEditField.HorizontalAlignment = 'right';
-            app.SubsamplingEditField.Layout.Row = 9;
-            app.SubsamplingEditField.Layout.Column = 6;
-            app.SubsamplingEditField.Tooltip = '(optional) Vector of start and end times in the recording to be analysed in [s], e.g. ‘30, 60’ will analyze 30 s of the recording between 30th and 60th second';
-            
-            
-            % Create SubsamplingEditFieldLabel
-            app.SubsamplingEditFieldLabel = uilabel(app.GridLayout);
-            app.SubsamplingEditFieldLabel.HorizontalAlignment = 'right';
-            app.SubsamplingEditFieldLabel.Layout.Row = 9;
-            app.SubsamplingEditFieldLabel.Layout.Column = 5;
-            app.SubsamplingEditFieldLabel.Text = 'Subsampling';
-            app.SubsamplingEditFieldLabel.Tooltip = app.SubsamplingEditField.Tooltip;
-            
-            
-            % Create WaveletsEditField
-            app.WaveletsEditField = uieditfield(app.GridLayout, 'text');
-            app.WaveletsEditField.HorizontalAlignment = 'right';
-            app.WaveletsEditField.Layout.Row = 8;
-            app.WaveletsEditField.Layout.Column = 6;
-            app.WaveletsEditField.Value = 'mea';
-            app.WaveletsEditField.Tooltip = 'List of wavelets to be used in spike detection. Available: mea, bior1.5, bior1.3, db2';
-            
-            
-            % Create WaveletsEditFieldLabel
-            app.WaveletsEditFieldLabel = uilabel(app.GridLayout);
-            app.WaveletsEditFieldLabel.HorizontalAlignment = 'right';
-            app.WaveletsEditFieldLabel.Layout.Row = 8;
-            app.WaveletsEditFieldLabel.Layout.Column = 5;
-            app.WaveletsEditFieldLabel.Text = 'Wavelets';
-            app.WaveletsEditFieldLabel.Tooltip = app.WaveletsEditField.Tooltip;
-            
-            % Create CostparametersEditField
-            app.CostparametersEditField = uieditfield(app.GridLayout, 'text');
-            app.CostparametersEditField.HorizontalAlignment = 'right';
-            app.CostparametersEditField.Layout.Row = 7;
-            app.CostparametersEditField.Layout.Column = 6;
-            app.CostparametersEditField.Value = '0';
-            app.CostparametersEditField.Tooltip = 'List of cost parameters (separated by comma). Cost parameter = Cost(comcission)/Cost(omission)';
-            
-            
-            % Create CostparametersEditFieldLabel
-            app.CostparametersEditFieldLabel = uilabel(app.GridLayout);
-            app.CostparametersEditFieldLabel.HorizontalAlignment = 'right';
-            app.CostparametersEditFieldLabel.Layout.Row = 7;
-            app.CostparametersEditFieldLabel.Layout.Column = 5;
-            app.CostparametersEditFieldLabel.Text = 'Cost parameters';
-            app.CostparametersEditFieldLabel.Tooltip = app.CostparametersEditField.Tooltip;
-            
-            % Create GroundedEditField
-            app.GroundedEditField = uieditfield(app.GridLayout, 'text');
-            app.GroundedEditField.HorizontalAlignment = 'right';
-            app.GroundedEditField.Layout.Row = 6;
-            app.GroundedEditField.Layout.Column = 6;
-            app.GroundedEditField.Tooltip = 'Vector of grounded electrode XY coordinates separated by commas; e.g. 15, 23, 32';
-            
-            % Create GroundedEditFieldLabel
-            app.GroundedEditFieldLabel = uilabel(app.GridLayout);
-            app.GroundedEditFieldLabel.HorizontalAlignment = 'right';
-            app.GroundedEditFieldLabel.Layout.Row = 6;
-            app.GroundedEditFieldLabel.Layout.Column = 5;
-            app.GroundedEditFieldLabel.Text = 'Grounded';
-            app.GroundedEditFieldLabel.Tooltip = app.GroundedEditField.Tooltip;
-            
-            % Create WidthmsEditField
-            app.WidthmsEditField = uieditfield(app.GridLayout, 'text');
-            app.WidthmsEditField.HorizontalAlignment = 'right';
-            app.WidthmsEditField.Layout.Row = 5;
-            app.WidthmsEditField.Layout.Column = 6;
-            app.WidthmsEditField.Value = '0.5, 1';
-            app.WidthmsEditField.Tooltip = 'Width of the voltage transient (spike) in [ms], recommended: 0.5, 1';
-            
-            
-            % Create WidthmsEditFieldLabel
-            app.WidthmsEditFieldLabel = uilabel(app.GridLayout);
-            app.WidthmsEditFieldLabel.HorizontalAlignment = 'right';
-            app.WidthmsEditFieldLabel.Layout.Row = 5;
-            app.WidthmsEditFieldLabel.Layout.Column = 5;
-            app.WidthmsEditFieldLabel.Text = 'Width [ms]';
-            app.WidthmsEditFieldLabel.Tooltip = app.WidthmsEditField.Tooltip;
-            
-            % Create NoscalesEditField
-            app.NoscalesEditField = uieditfield(app.GridLayout, 'numeric');
-            app.NoscalesEditField.Limits = [3 6];
-            app.NoscalesEditField.Layout.Row = 4;
-            app.NoscalesEditField.Layout.Column = 6;
-            app.NoscalesEditField.Value = 5;
-            app.NoscalesEditField.Tooltip = 'Number of scales across which wavelet will be stretched; recommended: 5';
-            
-            % Create NoscalesEditFieldLabel
-            app.NoscalesEditFieldLabel = uilabel(app.GridLayout);
-            app.NoscalesEditFieldLabel.HorizontalAlignment = 'right';
-            app.NoscalesEditFieldLabel.Layout.Row = 4;
-            app.NoscalesEditFieldLabel.Layout.Column = 5;
-            app.NoscalesEditFieldLabel.Text = 'No. scales';
-            app.NoscalesEditFieldLabel.Tooltip = app.NoscalesEditField.Tooltip;
-            
-            % Create NospikesEditField
-            app.NospikesEditField = uieditfield(app.GridLayout, 'numeric');
-            app.NospikesEditField.Limits = [50 1000];
-            app.NospikesEditField.Layout.Row = 3;
-            app.NospikesEditField.Layout.Column = 6;
-            app.NospikesEditField.Value = 200;
-            app.NospikesEditField.Tooltip = 'Number of spikes used to adapt the wavelet, recommended: 200';
-            
-            % Create NospikesEditFieldLabel
-            app.NospikesEditFieldLabel = uilabel(app.GridLayout);
-            app.NospikesEditFieldLabel.HorizontalAlignment = 'right';
-            app.NospikesEditFieldLabel.Layout.Row = 3;
-            app.NospikesEditFieldLabel.Layout.Column = 5;
-            app.NospikesEditFieldLabel.Text = 'No. spikes';
-            app.NospikesEditFieldLabel.Tooltip = app.NospikesEditField.Tooltip;
-            
-            % Create MultiplierEditField
-            app.MultiplierEditField = uieditfield(app.GridLayout);
-            app.MultiplierEditField.Layout.Row = 2;
-            app.MultiplierEditField.Layout.Column = 6;
-            app.MultiplierEditField.Value = num2str(3.5);
-            app.MultiplierEditField.HorizontalAlignment = 'right';
-            app.MultiplierEditField.Tooltip = 'The threshold multiplier used in spike detection. List separated by commas. At least 1 required. First entry will be used to extract waveform to adapt wavelet.';
-            
-            
-            % Create MultiplierEditFieldLabel
-            app.MultiplierEditFieldLabel = uilabel(app.GridLayout);
-            app.MultiplierEditFieldLabel.HorizontalAlignment = 'right';
-            app.MultiplierEditFieldLabel.Layout.Row = 2;
-            app.MultiplierEditFieldLabel.Layout.Column = 5;
-            app.MultiplierEditFieldLabel.Text = 'Multiplier';
-            app.MultiplierEditFieldLabel.Tooltip = app.MultiplierEditField.Tooltip;
-            
-            % Create SaveButton
-            app.SaveButton = uibutton(app.GridLayout, 'push');
-            app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
-            app.SaveButton.Layout.Row = 14;
-            app.SaveButton.Layout.Column = 6;
-            app.SaveButton.Text = 'Save';
-            app.SaveButton.Tooltip = 'Save parameters before running spike detection';
-            
-            % Create DatafolderpathEditField
-            app.DatafolderpathEditField = uieditfield(app.GridLayout, 'text');
-            app.DatafolderpathEditField.ValueChangedFcn = createCallbackFcn(app, @DatafolderpathEditFieldValueChanged, true);
-            app.DatafolderpathEditField.Layout.Row = 2;
-            app.DatafolderpathEditField.Layout.Column = 3;
-            app.DatafolderpathEditField.Tooltip = app.LoaddataButton.Tooltip;
-            
-            % Create SavefolderpathEditField
-            app.SavefolderpathEditField = uieditfield(app.GridLayout, 'text');
-            app.SavefolderpathEditField.ValueChangedFcn = createCallbackFcn(app, @SavefolderpathEditFieldValueChanged, true);
-            app.SavefolderpathEditField.Layout.Row = 3;
-            app.SavefolderpathEditField.Layout.Column = 3;
-            app.SavefolderpathEditField.Tooltip = app.OutputfolderButton.Tooltip;
-            app.SavefolderpathEditField.Value = [pwd, filesep];
-            
-            % Create ListoffilesTextAreaLabel
-            app.ListoffilesTextAreaLabel = uilabel(app.GridLayout);
-            app.ListoffilesTextAreaLabel.HorizontalAlignment = 'center';
-            app.ListoffilesTextAreaLabel.FontSize = 14;
-            app.ListoffilesTextAreaLabel.FontWeight = 'bold';
-            app.ListoffilesTextAreaLabel.Layout.Row = 4;
-            app.ListoffilesTextAreaLabel.Layout.Column = [2 3];
-            app.ListoffilesTextAreaLabel.Text = 'List of files';
-            
-            % Create ListoffilesTextArea
-            app.ListoffilesTextArea = uitextarea(app.GridLayout);
-            app.ListoffilesTextArea.Editable = 'off';
-            app.ListoffilesTextArea.FontName = 'Courier';
-            app.ListoffilesTextArea.Layout.Row = [5 7];
-            app.ListoffilesTextArea.Layout.Column = [2 3];
-            app.ListoffilesTextArea.FontColor = [0 0 0];
-            app.ListoffilesTextArea.Position = [258 277 150 157];
-            
-            % Create AnalysedFilesTextAreaLabel
-            app.AnalysedFilesTextAreaLabel = uilabel(app.GridLayout);
-            app.AnalysedFilesTextAreaLabel.HorizontalAlignment = 'center';
-            app.AnalysedFilesTextAreaLabel.FontSize = 14;
-            app.AnalysedFilesTextAreaLabel.FontWeight = 'bold';
-            app.AnalysedFilesTextAreaLabel.Layout.Row = 8;
-            app.AnalysedFilesTextAreaLabel.Layout.Column = [2 3];
-            app.AnalysedFilesTextAreaLabel.Text = 'Analysed files';
-            
-            % Create AnalysedFilesTextArea
-            app.AnalysedFilesTextArea = uitextarea(app.GridLayout);
-            app.AnalysedFilesTextArea.Editable = 'off';
-            app.AnalysedFilesTextArea.Layout.Row = [9 11];
-            app.AnalysedFilesTextArea.Layout.Column = [2 3];
-            app.AnalysedFilesTextArea.FontName = 'Courier';
-            app.AnalysedFilesTextArea.FontWeight = 'bold';
-            app.AnalysedFilesTextArea.FontColor = [0.4667 0.6745 0.1882];
-            app.AnalysedFilesTextArea.Value = {''};
-            
-            
-            % Create DetectspikesButton
-            app.DetectspikesButton = uibutton(app.GridLayout, 'push');
-            app.DetectspikesButton.ButtonPushedFcn = createCallbackFcn(app, @DetectspikesButtonPushed, true);
-            app.DetectspikesButton.FontSize = 14;
-            app.DetectspikesButton.FontWeight = 'bold';
-            app.DetectspikesButton.Layout.Row = [13 14];
-            app.DetectspikesButton.Layout.Column = [2 3];
-            app.DetectspikesButton.Text = 'Detect spikes';
-            app.DetectspikesButton.Tooltip = 'Run spike detection (save parameters first!)';
-            
-            % Create SpiketimeunitDropDownLabel
-            app.SpiketimeunitDropDownLabel = uilabel(app.GridLayout);
-            app.SpiketimeunitDropDownLabel.HorizontalAlignment = 'right';
-            app.SpiketimeunitDropDownLabel.Layout.Row = 13;
-            app.SpiketimeunitDropDownLabel.Layout.Column = 5;
-            app.SpiketimeunitDropDownLabel.Text = 'Spike time unit';
-            app.SpiketimeunitDropDownLabel.Tooltip = 'Select time unit in which the spikes will be saved';
-            
-            % Create SpiketimeunitDropDown
-            app.SpiketimeunitDropDown = uidropdown(app.GridLayout);
-            app.SpiketimeunitDropDown.Items = {'[frames]', '[s]', '[ms]'};
-            app.SpiketimeunitDropDown.ValueChangedFcn = createCallbackFcn(app, @SpiketimeunitDropDownValueChanged, true);
-            app.SpiketimeunitDropDown.Layout.Row = 13;
-            app.SpiketimeunitDropDown.Layout.Column = 6;
-            app.SpiketimeunitDropDown.Value = '[frames]';
-            app.SpiketimeunitDropDown.Tooltip = app.SpiketimeunitDropDownLabel.Tooltip;
-            
-            % Show the figure after all components are created
-            app.UIFigure.Visible = 'on';
-        end
-    end
-    
-    % App creation and deletion
-    methods (Access = public)
-        
-        % Construct app
-        function app = getSpikesApp
-            
-            % Create UIFigure and components
-            createComponents(app)
-            
-            % Register the app with App Designer
-            registerApp(app, app.UIFigure)
-            
-            if nargout == 0
-                clear app
-            end
-        end
-        
-        % Code that executes before app deletion
-        function delete(app)
-            
-            % Delete UIFigure when app is deleted
-            delete(app.UIFigure)
-        end
     end
 end
