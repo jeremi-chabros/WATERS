@@ -38,7 +38,7 @@ spikeWaveforms = [];
 
 for i = 1:length(spikeTimes)
     
-    if spikeTimes(i)+win < length(trace) && spikeTimes(i)-win > 1
+    if spikeTimes(i)+win < length(trace)-1 && spikeTimes(i)-win > 1
         
         % Look into a window around the spike
         bin = trace(spikeTimes(i)-win:spikeTimes(i)+win);
@@ -60,10 +60,11 @@ for i = 1:length(spikeTimes)
             end
         else
             newSpikeTime = spikeTimes(i)+pos-win;
+            if newSpikeTime+25 < length(trace) && newSpikeTime-win > 1
             waveform = trace(newSpikeTime-25:newSpikeTime+25);
-            
             sFr(end+1) = newSpikeTime;
             spikeWaveforms(:, end+1) = waveform;
+            end
         end
     end
 end

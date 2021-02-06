@@ -336,7 +336,7 @@ function spikeFrames = detectSpikesWavelet(...
             %The real challenge here is to merge multiple 1's that belong to the same
             %spike into one event and to locate that event
             
-            Refract = 1.5 * Wid(2);    %[ms] the refractory period -- can't resolve spikes
+            Refract = 0.01;    %[ms] the refractory period -- can't resolve spikes
             %that are closer than Refract;
             Refract = round(Refract * SFr);
             

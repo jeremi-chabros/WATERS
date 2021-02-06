@@ -1,5 +1,6 @@
 clearvars; clc;
 
+% waveform = downsample(Y,2);
 % Specify the path to your data
 dataPath = '/Users/jeremi/mea/data/PV-ArchT/';
 
@@ -17,6 +18,8 @@ load('params.mat');
 params.subsample_time = [30 60];
 params.costList = 0.1;
 params.ns = 2;
+params.wnameList = {'mea'};
+params.multiplier = 3.5;
 
 % Create object 's' from class 'detectSpikes'
 s = detectSpikes; 
@@ -30,4 +33,5 @@ s.option = 'list';
 s.files = files;
 
 % Call method 'getSpikes'
+% s.adapt_wavelet(waveform);
 s.getSpikes;

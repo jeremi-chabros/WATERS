@@ -183,7 +183,7 @@ classdef detectSpikes
                 end
             end
         end
-%%        
+        %%
         function [spikeTimes, spikeWaveforms, trace] = detect_spikes_cwt(...
                 self, data, wname, L, multiplier)
             
@@ -278,15 +278,15 @@ classdef detectSpikes
                 [b, a] = butter(filterOrder, wn);
                 trace = filtfilt(b, a, double(data));
             catch
-              % Note: some errors will appear irrespective of the
-              % appropriate toolboxes being installed. Didn't bother to
-              % code for all the cases and the same message will be
-              % returned...
+                % Note: some errors will appear irrespective of the
+                % appropriate toolboxes being installed. Didn't bother to
+                % code for all the cases and the same message will be
+                % returned...
                 error('Signal Processing Toolbox not found');
             end
             
-          % NOTE: 'win' also specifies the number of frames before/after
-          % spike to be saved. Smaller 'win' --> shorter waveform 
+            % NOTE: 'win' also specifies the number of frames before/after
+            % spike to be saved. Smaller 'win' --> shorter waveform
             win = 25;   % [frames]
             
             if strcmp(wname, 'mea') && ~ttx
@@ -318,8 +318,13 @@ classdef detectSpikes
                     multiplier = str2num(multiplier);
                     [spikeTrain, ~, ~] = detect_spikes_threshold(self, trace, multiplier, 2, fs, 0);
                     spikeTimes = find(spikeTrain == 1);
+                elseif strcmp(wname, 'swtteo')
+                    in.M = trace;
+                    in.SaRa = fs;
+                    self.params.method = 'auto';
+                    self.params.filter = 0;
+                    spikeTimes = SWTTEO(self, in, self.params);
                 else
-                    
                     % Detect spikes with wavelet method
                     spikeTimes = detect_spikes_wavelet(self, trace, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
                 end
@@ -329,13 +334,12 @@ classdef detectSpikes
                     minPeakThrMultiplier,...
                     maxPeakThrMultiplier,...
                     posPeakThrMultiplier);
+                spikeTimes = unique(spikeTimes);
             catch
                 spikeTimes = [];
             end
         end
-        
-        
-%%
+        %%
         function [aveWaveform, spikeTimes] = get_template(self, trace, multiplier, refPeriod, fs, nSpikes)
             
             % Description:
@@ -370,7 +374,9 @@ classdef detectSpikes
             %   Uniformly sample n_spikes
             spikes2use = round(linspace(2, length(spikeTimes)-2, nSpikes));
             spikes2use = spikeTimes(spikes2use);
+
             [spikeTimes, spikeWaveforms] = align_peaks(self, spikes2use, trace, 25, 0);
+
             %             spikeWaveforms = zeros(51, nSpikes);
             %             for i = 1:nSpikes
             %                 n = spikeTimes(spikes2use(i));
@@ -380,9 +386,9 @@ classdef detectSpikes
             %             end
             aveWaveform = median(spikeWaveforms,2);
         end
-%%
+        %%
         function [spikeTrain, filtTrace, threshold] = detect_spikes_threshold(self,...
-                                                      trace, multiplier, refPeriod, fs, filterFlag)
+                trace, multiplier, refPeriod, fs, filterFlag)
             
             % Description:
             %   Threshold-based spike detection
@@ -443,9 +449,9 @@ classdef detectSpikes
             end
             filtTrace = trace;
         end
-%%
+        %%
         function [spikeTimes, spikeWaveforms] = align_peaks(self, spikeTimes, trace, win,...
-                                                artifactFlg, varargin)
+                artifactFlg, varargin)
             
             % Description:
             %   Aligns spikes by negative peaks and removes artifacts by amplitude
@@ -473,9 +479,9 @@ classdef detectSpikes
             % Obtain thresholds for artifact removal
             threshold = median(abs(trace - mean(trace))) / 0.6745;
             
-            if exist('varargin', 'var')
+            if artifactFlg
                 minPeakThr = -threshold * varargin{1};
-                % maxPeakThr = -threshold * varargin{2};
+                maxPeakThr = -threshold * varargin{2};
                 posPeakThr = threshold * varargin{3};
             end
             
@@ -500,19 +506,21 @@ classdef detectSpikes
                         if negativePeak < minPeakThr && positivePeak < posPeakThr
                             
                             newSpikeTime = spikeTimes(i)+pos-win;
+                            if newSpikeTime+25 < length(trace) && newSpikeTime-win > 1
+                                waveform = trace(newSpikeTime-25:newSpikeTime+25);
+                                
+                                sFr(i) = newSpikeTime;
+                                spikeWaveforms(:, i) = waveform;
+                            end
+                        end
+                    else
+                        newSpikeTime = spikeTimes(i)+pos-win;
+                        if newSpikeTime+25 < length(trace) && newSpikeTime-win > 1
                             waveform = trace(newSpikeTime-25:newSpikeTime+25);
                             
                             sFr(i) = newSpikeTime;
                             spikeWaveforms(:, i) = waveform;
-                            
                         end
-                    else
-                        newSpikeTime = spikeTimes(i)+pos-win;
-                        waveform = trace(newSpikeTime-25:newSpikeTime+25);
-                        
-                        sFr(i) = newSpikeTime;
-                        spikeWaveforms(:, i) = waveform;
-                        
                     end
                 end
             end
@@ -523,7 +531,7 @@ classdef detectSpikes
             spikeWaveforms = spikeWaveforms(:, sFr~=0);
             
         end
- %%
+        %%
         function [newWaveletIntegral, newWaveletSqN] = adapt_wavelet(self, aveWaveform)
             
             % Description:
@@ -541,7 +549,6 @@ classdef detectSpikes
             %   Jeremy Chabros, University of Cambridge, 2020
             %   email: jjc80@cam.ac.uk
             %   github.com/jeremi-chabros/CWT
-            
             template = aveWaveform;
             
             % Interpolation
@@ -560,7 +567,7 @@ classdef detectSpikes
             signal(6:105) = y;
             
             % Adapt the wavelet
-            [Y,X,~] = pat2cwav(signal, 'orthconst', 0, 'none') ;
+            [Y,X,~] = pat2cwav(signal, 'orthconst', 0, 'none');
             
             % Test if a legitmate wavelet
             dxval = max(diff(X));
@@ -570,7 +577,7 @@ classdef detectSpikes
             
             % Save the wavelet
             if newWaveletSqN == 1.0000 % Ugly but it is what it is
-                
+
                 % Using built-in cwt method requires saving the custom wavelet each
                 % time - currently overwriting as there is no reason to retrieve the
                 % wavelet
@@ -586,10 +593,9 @@ classdef detectSpikes
                 disp(['L^2 norm = ', num2str(newWaveletSqN)]);
             end
         end
-        
-%%
+        %%
         function spikeFrames = detect_spikes_wavelet(...
-                               self, Signal, SFr, Wid, Ns, option, L, wname, PltFlg, CmtFlg)
+                self, Signal, SFr, Wid, Ns, option, L, wname, PltFlg, CmtFlg)
             
             % DETECT_SPIKES_WAVELET wavelet based algorithm for detection of transients
             % from neural data.
@@ -767,8 +773,7 @@ classdef detectSpikes
                 disp(['elapsed time: ' num2str(etime(clock,to))])
             end
         end
-        
-        
+        %%
         function Scale = determine_scales(self, wname,Wid,SFr,Ns)
             
             %Ns - # of scales
@@ -913,9 +918,7 @@ classdef detectSpikes
                 end
             end
         end
-        
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
+        %%
         function fcn = parse(self, Index,SFr,Wid)
             
             %This is a special function, it takes the vector Index which has
@@ -926,7 +929,7 @@ classdef detectSpikes
             %The real challenge here is to merge multiple 1's that belong to the same
             %spike into one event and to locate that event
             
-            Refract = 1.5 * Wid(2);    %[ms] the refractory period -- can't resolve spikes
+            Refract = 0.2;    %[ms] the refractory period -- can't resolve spikes
             %that are closer than Refract;
             Refract = round(Refract * SFr);
             
@@ -974,6 +977,443 @@ classdef detectSpikes
             
             fcn = TE;
         end
-        
+        %%
+        function [spikepos, out_] = SWTTEO(self, in,params)
+            %SWTTEO Detects Spikes Location using a modified WTEO approach
+            %   Usage:  spikepos = swtteo(in);
+            %           spikepos = swtteo(in,params);
+            %
+            %   Input parameters:
+            %       in_struc:   Input structure which contains
+            %                       M:      Matrix with data, stored columnwise
+            %                       SaRa:   Sampling frequency
+            %       optional input parameters:
+            %                       none
+            %   Output parameters:
+            %       spikepos:   Timestamps of the detected spikes stored columnwise
+            %
+            %   Description:
+            %       swtteo(in,params) computes the location of action potential in
+            %       noisy sym5 sym5surements. This method is based on the work of N.
+            %       Nabar and K. Rajgopal "A Wavelet based Teager Engergy Operator for
+            %       Spike Detection in Microelectrode Array Recordings". The algorithm
+            %       therein was further improved by using a stationary wavelet
+            %       transform and a different thresholding concept.
+            %       For an unsupervised usage the sensitivity of the algorithm can be
+            %       adapted by changing the value of the variable global_fac in line
+            %       108. A larger value results in fewer detected spikes but also the
+            %       number of false positives decrease. Decreasing this factor makes it
+            %       more sensitive to detect spikes.
+            %
+            %   References:
+            %       tbd.
+            %
+            %
+            %   Author: F. Lieb, February 2016
+            
+            if nargin<2
+                params = struct;
+            end
+            
+            %parse inputs
+            [params,s,fs] = parse_input(self, in,params);
+            TEO = @(x,k) (x.^2 - myTEOcircshift(self, x,[-k, 0]).*myTEOcircshift(self,x,[k, 0]));
+            [L,c] = size(s);
+            if L==1
+                s = s';
+                L = c;
+                c = 1;
+            end
+            
+            
+            %do zero padding if the L is not divisible by a power of two
+            pow = 2^params.wavLevel;
+            if rem(L,pow) > 0
+                Lok = ceil(L/pow)*pow;
+                Ldiff = Lok - L;
+                s = [s; zeros(Ldiff,c)];
+            end
+            
+            %testing showed prefiltering didnt improve the results
+            %prefilter signal
+            if params.filter
+                if ~isfield(params,'F1')
+                    params.Fstop = 100;
+                    params.Fpass = 200;
+                    Apass = 0.2;
+                    Astop = 80;
+                    params.F1 = designfilt(   'highpassiir',...
+                        'StopbandFrequency',params.Fstop ,...
+                        'PassbandFrequency',params.Fpass,...
+                        'StopbandAttenuation',Astop, ...
+                        'PassbandRipple',Apass,...
+                        'SampleRate',fs,...
+                        'DesignMethod','butter');
+                end
+                f = filtfilt(params.F1,s);
+            else
+                f = s;
+            end
+            
+            %non vectorized version:
+            % [SWTa,~] = swt(s,wavLevel,wavelet);
+            %     out22 = TEO(SWTa);
+            
+            %vectorized version:
+            lo_D = wfilters(params.wavelet);
+            out_ = zeros(size(s));
+            ss = f;
+            for k=1:params.wavLevel
+                %Extension
+                lf = length(lo_D);
+                ss = extendswt(self,ss,lf);
+                %convolution
+                swa = conv2(ss,lo_D','valid');
+                swa = swa(2:end,:); %even number of filter coeffcients
+                %apply teo to swt output
+                
+                
+                temp = abs(TEO(swa,1));
+                
+                if params.smoothing
+                    wind = hamming(params.winlength);
+                    %wind = sqrt(3*sum(wind.^2) + sum(wind)^2);
+                    %temp = filtfilt(wind,1,temp);
+                    if params.normalize_smoothingwindow
+                        wind = wind./(sqrt(3*sum(wind.^2) + sum(wind)^2));
+                    end
+                    temp2 = conv2(temp,wind','same');
+                    %temp = circshift(filter(wind,1,temp), [-3*1 1]);
+                else
+                    temp2 = temp;
+                end
+                
+                out_ = out_ + temp2;
+                
+                
+                %dyadic upscaling of filter coefficients
+                lo_D = dyadup(lo_D,0,1);
+                %updates
+                ss = swa;
+            end
+            
+            
+            
+            %non-vectorized version to extract spikes...
+            switch params.method
+                case 'auto'
+                    %         global_fac = 1.11e+03;%1.6285e+03; %540;%1800;%430; %1198; %change this
+                    global_fac = 430;%1.6285e+03; %540;%1800;%430; %1198; %change this
+                    if c == 1
+                        [CC,LL] = wavedec(s,5,'sym5');
+                        lambda = global_fac*wnoisest(CC,LL,1);
+                        thout = wthresh(out_,'h',lambda);
+                        spikepos = get_spike_pos(self,thout,fs,s,params);
+                    else
+                        spikepos = cell(c,1);
+                        for jj=1:c
+                            [CC,LL] = wavedec(s(:,jj),5,'sym5');
+                            lambda = global_fac*wnoisest(CC,LL,1);
+                            thout = wthresh(out_(:,jj),'h',lambda);
+                            spikepos{jj}=get_spike_pos(self,thout,fs,s(:,jj),params);
+                        end
+                    end
+                case 'auto2'
+                    %         global_fac = 9.064e+02;%1.3454e+03;%800;%1800;%430; %1198; %change this
+                    global_fac = 1198;
+                    params.method = 'auto';
+                    if c == 1
+                        [CC,LL] = wavedec(out_,5,'sym5');
+                        lambda = global_fac*wnoisest(CC,LL,1);
+                        thout = wthresh(out_,'h',lambda);
+                        spikepos = get_spike_pos(self,thout,fs,s,params);
+                    else
+                        spikepos = cell(c,1);
+                        for jj=1:c
+                            [CC,LL] = wavedec(out_(:,jj),5,'sym5');
+                            lambda = global_fac*wnoisest(CC,LL,1);
+                            thout = wthresh(out_(:,jj),'h',lambda);
+                            spikepos{jj}=get_spike_pos(self,thout,fs,s(:,jj),params);
+                        end
+                    end
+                case 'numspikes'
+                    if c == 1
+                        spikepos=get_spike_pos(self,out_,fs,s,params);
+                    else
+                        spikepos = cell(1,c);
+                        params_tmp = params;
+                        for jj=1:c
+                            % extract spike positions from wteo output
+                            params_tmp.numspikes = params.numspikes(jj);
+                            spikepos{jj}=get_spike_pos(self,out_(:,jj),fs,s(:,jj),params_tmp);
+                        end
+                    end
+                case 'lambda'
+                    thout = wthresh(out_,'h',params.lambda);
+                    spikepos = get_spike_pos(self,thout,fs,s,params);
+                case 'energy'
+                    params.p = 0.80;
+                    params.rel_norm =  5.718e-3;%5.718e-3;%4.842e-3;%22e-5;%1.445e-4;
+                    %wavelet denoising
+                    wdenoising = 0;
+                    n = 9;
+                    w = 'sym5';
+                    tptr = 'sqtwolog'; %'rigrsure','heursure','sqtwolog','minimaxi'
+                    
+                    
+                    if c == 1
+                        if wdenoising == 1
+                            out_ = wden(out_,tptr,'h','mln',n,w);
+                            %high frequencies, decision variable
+                            c = dgtreal(out_,{'hann',10},1,200);
+                            out_ = sum(abs(c).^2,1);
+                        end
+                        spikepos = get_spike_pos(self,out_,fs,s,params);
+                    else
+                        spikepos = cell(c,1);
+                        for jj=1:c
+                            if wdenoising == 1
+                                out_(:,jj) = wden(out_(:,jj),tptr,'h','mln',n,w);
+                            end
+                            spikepos{jj} = get_spike_pos(self,out_(:,jj),fs,s(:,jj),params);
+                        end
+                    end
+                otherwise
+                    error('unknown detection method specified');
+            end
+        end
+        %%
+        function [params,s,fs] = parse_input(self, in,params)
+            %parse_input parses input variables
+            s = in.M;
+            fs = in.SaRa;
+            %Default settings for detection method
+            if ~isfield(params,'method')
+                params.method = 'auto';
+            end
+            if strcmp(params.method,'numspikes')
+                if ~isfield(params,'numspikes')
+                    error('please specify number of spikes in params.numspikes');
+                end
+            end
+            
+            %Default settings for stationary wavelet transform
+            if ~isfield(params,'wavLevel')
+                params.wavLevel = 2;
+            end
+            if ~isfield(params, 'wavelet')
+                params.wavelet = 'sym5';
+            end
+            if ~isfield(params, 'winlength')
+                params.winlength = ceil(1.3e-3*fs); %1.3
+            end
+            if ~isfield(params, 'normalize_smoothingwindow')
+                params.normalize_smoothingwindow = 0;
+            end
+            if ~isfield(params, 'smoothing')
+                params.smoothing = 1;
+            end
+            if ~isfield(params, 'filter')
+                params.filter = 0;
+            end
+        end
+        %%
+        function y = extendswt(self, x,lf)
+            %EXTENDSWT extends the signal periodically at the boundaries
+            [r,c] = size(x);
+            y = zeros(r+lf,c);
+            y(1:lf/2,:) = x(end-lf/2+1:end,:);
+            y(lf/2+1:lf/2+r,:) = x;
+            y(end-lf/2+1:end,:) = x(1:lf/2,:);
+            
+        end
+        %%
+        function X = myTEOcircshift(self,Y,k)
+            %circshift without the boundary behaviour...
+            
+            colshift = k(1);
+            rowshift = k(2);
+            
+            temp  = circshift(Y,k);
+            
+            if colshift < 0
+                temp(end+colshift+1:end,:) = flipud(Y(end+colshift+1:end,:));
+            elseif colshift > 0
+                temp(1:1+colshift-1,:) = flipud(Y(1:1+colshift-1,:));
+            else
+                
+            end
+            
+            if rowshift<0
+                temp(:,end+rowshift+1:end) = fliplr(Y(:,end+rowshift+1:end));
+            elseif rowshift>0
+                temp(:,1:1+rowshift-1) = fliplr(Y(:,1:1+rowshift-1));
+            else
+            end
+            
+            X = temp;
+        end
+        %%
+        function idx2 = get_spike_pos(self, input_sig,fs,orig_sig,params)
+            %get_spike_pos computes spike positions from thresholded data
+            %
+            %   This function computes the exact spike locations based on a thresholded
+            %   signal. The spike locations are indicated as non-zero elements in
+            %   input_sig and are accordingly evaluated.
+            %
+            %   The outputs are the spike positions in absolute index values (no time
+            %   dependance).
+            %
+            %   Author: F.Lieb, February 2016
+            %
+            
+            
+            %Define a fixed spike duration, prevents from zeros before this duration is
+            %over
+            %maxoffset
+            spikeduration = 10e-4*fs; %10e-4
+            %minoffset
+            minoffset = 3e-4*fs; %3e-4
+            
+            offset = floor(5e-4*fs); %5e-4 %was 2e-4, dunno why
+            L = length(input_sig);
+            L2 = length(orig_sig);
+            
+            switch params.method
+                case 'numspikes'
+                    out = input_sig;
+                    np = 0;
+                    idx2 = zeros(1,params.numspikes);
+                    while (np < params.numspikes)
+                        [~, idxmax] = max(out);
+                        idxl = idxmax;
+                        idxr = idxmax;
+                        out(idxmax) = 0;
+                        offsetcounter = 0;
+                        while( (out(max(1,idxl-2)) < out(max(1,idxl-1)) ||...
+                                offsetcounter < minoffset) &&...
+                                offsetcounter < spikeduration )
+                            out(max(1,idxl-1)) = 0;
+                            idxl = idxl-1;
+                            offsetcounter = offsetcounter + 1;
+                        end
+                        offsetcounter = 0;
+                        while( (out(min(L,idxr+2)) < out(min(L,idxr+1)) ||...
+                                offsetcounter < minoffset ) &&...
+                                offsetcounter < spikeduration )
+                            out(min(L,idxr+1)) = 0;
+                            idxr = idxr+1;
+                            offsetcounter = offsetcounter + 1;
+                        end
+                        %new approach
+                        
+                        indexx = min(L2, idxmax-offset:idxmax+offset);
+                        %indexx = min(L2,idxl-offset:idxr+offset); %old approach
+                        indexx = max(offset,indexx);
+                        idxx = find( abs(orig_sig(indexx)) == ...
+                            max( abs(orig_sig(indexx) )),1,'first');
+                        idx2(np+1) = idxmax - offset + idxx-1;
+                        np = np + 1;
+                    end
+                case {'energy'}
+                    rel_norm = params.rel_norm;
+                    p = params.p;
+                    ysig = input_sig;
+                    normy = norm(input_sig);
+                    L = length(input_sig);
+                    %min and max length of signal duration
+                    maxoffset = 12;
+                    minoffset = 6;
+                    offset = 5;
+                    idx2 = [];
+                    np = 0;
+                    maxspikecount = 300;
+                    temp = 0;
+                    
+                    %while( norm(ysig) > (1-p)*normy )
+                    while( 1 )
+                        norm_old = norm(ysig);
+                        [~, idxmax] = max(ysig);
+                        idxl = idxmax;
+                        idxr = idxmax;
+                        ysig(idxmax) = 0;
+                        offsetcounter = 0;
+                        while ( ( ysig(max(1,idxl-2)) < ysig(max(1,idxl-1)) ||...
+                                offsetcounter < minoffset ) && ...
+                                offsetcounter < maxoffset )
+                            ysig(max(1,idxl-1)) = 0;
+                            idxl = idxl - 1;
+                            %if (ysig(max(1,idxl))==0)
+                            %    break;
+                            %end
+                            offsetcounter = offsetcounter + 1;
+                        end
+                        offsetcounter = 0;
+                        while ( ( ysig(min(L,idxr+2)) < ysig(min(L,idxr+1)) ||...
+                                offsetcounter < minoffset ) && ...
+                                offsetcounter < maxoffset )
+                            ysig(min(L,idxr+1)) = 0;
+                            idxr = idxr + 1;
+                            %if (ysig(min(L,idxr)) == 0)
+                            %    break;
+                            %end
+                            offsetcounter = offsetcounter + 1;
+                        end
+                        
+                        indexx = min(L, idxmax-offset:idxmax+offset);
+                        %indexx = min(L2,idxl-offset:idxr+offset); %old approach
+                        indexx = max(offset,indexx);
+                        idxx = find( abs(orig_sig(indexx)) == ...
+                            max( abs(orig_sig(indexx) )),1,'first');
+                        idx2(np+1) = idxmax - offset + idxx-1;
+                        np = np + 1;
+                        
+                        fprintf('rel norm: %f\n', (norm_old-norm(ysig))/norm_old);
+                        temp(np+1) = (norm_old-norm(ysig))/norm_old;
+                        if (norm_old-norm(ysig))/norm_old < rel_norm
+                            if length(idx2)>1
+                                idx2 = idx2(1:end-1);
+                            else
+                                idx2 = [];
+                            end
+                            break
+                        end
+                        if  np > maxspikecount
+                            break;
+                        end
+                    end
+                    %figure(2), plot(temp);
+                case {'auto','lambda'}
+                    %helper variables
+                    idx2=[];
+                    iii=1;
+                    test2 = input_sig;
+                    %loop until the input_sig is only zeros
+                    while (sum(test2) ~= 0)
+                        %get the first nonzero position
+                        tmp = find(test2,1,'first');
+                        test2(tmp) = 0;
+                        %tmp2 is the counter until the spike duration
+                        tmp2 = min(length(test2),tmp + 1);%protect against end of vec
+                        counter = 0;
+                        %search for the end of the spike
+                        while(test2(tmp2) ~= 0 || counter<spikeduration )
+                            test2(tmp2) = 0;
+                            tmp2 = min(length(test2),tmp2 + 1);
+                            counter = counter + 1;
+                        end
+                        %spike location is in intervall [tmp tmp2], look for the max
+                        %element in the original signal with some predefined offset:
+                        indexx = min(length(orig_sig),tmp-offset:tmp2+offset);
+                        indexx = max(offset,indexx);
+                        idxx = find( abs(orig_sig(indexx)) == ...
+                            max( abs(orig_sig(indexx) )),1,'first');
+                        idx2(iii) = tmp - offset + idxx-1;
+                        iii = iii+1;
+                    end
+                otherwise
+                    error('unknown method');
+            end
+        end
     end
 end
