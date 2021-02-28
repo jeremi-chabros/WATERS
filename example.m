@@ -6,7 +6,7 @@ dataPath = '/Users/jeremi/mea/data/PV-ArchT/';
 
 % If run on single files (as opposed to all files in the dataPath
 % directory), specify the list of the file names
-files = {'PAT200219_2C_DIV170002.mat'};
+files = {'PAT200219_2C_DIV170001.mat'};
 
 % Desired output directory
 savepath = [pwd filesep];
@@ -15,7 +15,7 @@ savepath = [pwd filesep];
 % initialize
 load('params.mat');
 
-params.subsample_time = [30 60];
+% params.subsample_time = [30 60];
 params.costList = 0.1;
 params.ns = 2;
 params.wnameList = {'mea'};

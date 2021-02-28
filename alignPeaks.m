@@ -1,5 +1,5 @@
 function [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win,...
-                                                    artifactFlg, varargin)
+    artifactFlg, varargin)
 
 % Description:
 %   Aligns spikes by negative peaks and removes artifacts by amplitude
@@ -19,18 +19,17 @@ function [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win,...
 %   spikeTimes: [#spikes x 1] new spike times aligned to the negative amplitude peak
 %   spikeWaveforms: [51 x #spikes] waveforms of the detected spikes
 
-% Author: 
+% Author:
 %   Jeremy Chabros, University of Cambridge, 2020
 %   email: jjc80@cam.ac.uk
 %   github.com/jeremi-chabros
 
 % Obtain thresholds for artifact removal
-threshold = median(abs(trace - mean(trace))) / 0.6745;
-
+threshold = median(abs(trace - mean(trace)));
 if artifactFlg
-    minPeakThr = -threshold * varargin{1};
-    maxPeakThr = -threshold * varargin{2};
-    posPeakThr = threshold * varargin{3};
+    minPeakThr = mean(trace) - threshold * varargin{1};
+    maxPeakThr = mean(trace) - threshold * varargin{2};
+    posPeakThr = mean(trace) + threshold * varargin{3};
 end
 
 sFr = [];
@@ -50,7 +49,8 @@ for i = 1:length(spikeTimes)
         % Remove artifacts and assign new timestamps
         
         if artifactFlg
-            if negativePeak < minPeakThr && positivePeak < posPeakThr
+            if (negativePeak < minPeakThr) && (positivePeak < posPeakThr)
+%                     (1*abs(positivePeak) < abs(negativePeak))
                 
                 newSpikeTime = spikeTimes(i)+pos-win;
                 waveform = trace(newSpikeTime-25:newSpikeTime+25);
@@ -61,9 +61,9 @@ for i = 1:length(spikeTimes)
         else
             newSpikeTime = spikeTimes(i)+pos-win;
             if newSpikeTime+25 < length(trace) && newSpikeTime-win > 1
-            waveform = trace(newSpikeTime-25:newSpikeTime+25);
-            sFr(end+1) = newSpikeTime;
-            spikeWaveforms(:, end+1) = waveform;
+                waveform = trace(newSpikeTime-25:newSpikeTime+25);
+                sFr(end+1) = newSpikeTime;
+                spikeWaveforms(:, end+1) = waveform;
             end
         end
     end
