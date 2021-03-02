@@ -50,13 +50,15 @@ for i = 1:length(spikeTimes)
         
         if artifactFlg
             if (negativePeak < minPeakThr) && (positivePeak < posPeakThr)
-%                     (1*abs(positivePeak) < abs(negativePeak))
+                %                     (1*abs(positivePeak) < abs(negativePeak))
                 
                 newSpikeTime = spikeTimes(i)+pos-win;
-                waveform = trace(newSpikeTime-25:newSpikeTime+25);
-                
-                sFr(end+1) = newSpikeTime;
-                spikeWaveforms(:, end+1) = waveform;
+                if newSpikeTime+25 < length(trace) && newSpikeTime-25 > 1
+                    waveform = trace(newSpikeTime-25:newSpikeTime+25);
+                    
+                    sFr(end+1) = newSpikeTime;
+                    spikeWaveforms(:, end+1) = waveform;
+                end
             end
         else
             newSpikeTime = spikeTimes(i)+pos-win;
