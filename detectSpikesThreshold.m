@@ -34,8 +34,8 @@ end
 
 % Calculate the threshold (median absolute deviation)
 % See: https://en.wikipedia.org/wiki/Median_absolute_deviation
-s = median(abs(trace-mean(trace)));     % Faster than mad(X,1);
-m = mean(trace);                % Note: filtered trace is already zero-mean
+s = median(abs(trace-mean(trace)))/0.6745;     % Faster than mad(X,1);
+m = median(trace);                % Note: filtered trace is already zero-mean
 threshold = m - multiplier*s;
 
 % Detect spikes (defined as threshold crossings)

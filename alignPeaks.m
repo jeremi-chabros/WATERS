@@ -29,7 +29,7 @@ function [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win,...
 % TODO: Pass it as an argument
 
 % Obtain thresholds for artifact removal
-threshold = mean(trace) - median(abs(trace - mean(trace)));
+threshold = median(trace) - median(abs(trace - mean(trace)))/0.6745;
 if artifactFlg
     minPeakThr = -threshold * varargin{1};
     maxPeakThr = -threshold * varargin{2};
