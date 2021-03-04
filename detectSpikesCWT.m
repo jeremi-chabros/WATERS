@@ -83,7 +83,7 @@ catch
     error('Signal Processing Toolbox not found');
 end
 
-win = 25;   % [frames]
+win = 10;   % [frames]
 
 if strcmp(wname, 'mea') && ~ttx
     

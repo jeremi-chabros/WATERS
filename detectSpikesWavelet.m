@@ -1,4 +1,4 @@
-function spikeFrames = detectSpikesWavelet(...
+function [spikeFrames, fh] = detectSpikesWavelet(...
                 Signal, SFr, Wid, Ns, option, L, wname, PltFlg, CmtFlg)
             
             % DETECT_SPIKES_WAVELET wavelet based algorithm for detection of transients
@@ -170,6 +170,7 @@ function spikeFrames = detectSpikesWavelet(...
                 xlabel('Time (samples)')
                 ylabel('Coefficients')
                 set(gca,'XLim',[1 Nt])
+                fh = gcf;
             end
             
             if CmtFlg == 1

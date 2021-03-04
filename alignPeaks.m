@@ -37,7 +37,7 @@ if artifactFlg
 end
 
 sFr = zeros(1,length(spikeTimes));
-spikeWaveforms = zeros(51, length(spikeTimes));
+spikeWaveforms = zeros(length(spikeTimes),51);
 
 for i = 1:length(spikeTimes)
     
@@ -52,12 +52,12 @@ for i = 1:length(spikeTimes)
         
         % Remove artifacts and assign new timestamps
         if artifactFlg
-            if (negativePeak < minPeakThr) && (positivePeak < posPeakThr)
+            if (negativePeak < minPeakThr) && (positivePeak < posPeakThr) && (positivePeak < abs(negativePeak))
                 newSpikeTime = spikeTimes(i)+pos-win;
                 if newSpikeTime+25 < length(trace) && newSpikeTime-25 > 1
                     waveform = trace(newSpikeTime-25:newSpikeTime+25);
                     sFr(i) = newSpikeTime;
-                    spikeWaveforms(:, i) = waveform;
+                    spikeWaveforms(i, :) = waveform;
                 end
             end
         else
@@ -65,7 +65,7 @@ for i = 1:length(spikeTimes)
             if newSpikeTime+25 < length(trace) && newSpikeTime-win > 1
                 waveform = trace(newSpikeTime-25:newSpikeTime+25);
                 sFr(i) = newSpikeTime;
-                spikeWaveforms(:, i) = waveform;
+                spikeWaveforms(i, :) = waveform;
             end
         end
     end
@@ -74,6 +74,6 @@ end
 % Pre-allocation & logical indexing made it a lot faster
 % than using (end+1) indexing in the loop above
 spikeTimes = sFr(sFr~=0);
-spikeWaveforms = spikeWaveforms(:, sFr~=0);
+spikeWaveforms = spikeWaveforms(sFr~=0,:);
 end
 
