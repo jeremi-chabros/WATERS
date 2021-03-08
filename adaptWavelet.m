@@ -34,13 +34,13 @@ signal = zeros(1, 110);
 signal(6:105) = y;
 
 % Adapt the wavelet
-[Y,X,~] = pat2cwav(signal, 'orthconst', 0, 'none') ;
+[Y,X,~] = pat2cwav(signal, 'orthconst', 0, 'none');
 
 % Test if a legitmate wavelet
 dxval = max(diff(X));
-newWaveletIntegral = dxval*sum(Y); %    Should be 1.0
+newWaveletIntegral = dxval*sum(Y); %    Should be zero
 newWaveletSqN = dxval*sum(Y.^2);
-newWaveletSqN = round(newWaveletSqN,10); % Should be zero
+newWaveletSqN = round(newWaveletSqN,10); % Should be 1
 
 % Save the wavelet
 if newWaveletSqN == 1.0000

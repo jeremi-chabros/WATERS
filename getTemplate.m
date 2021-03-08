@@ -22,7 +22,7 @@ function [aveWaveform, spikeTimes] = getTemplate(trace, multiplier, refPeriod, f
 
 [spikeTrain, ~, ~] = detectSpikesThreshold(trace, multiplier, refPeriod, fs, 0);
 spikeTimes = find(spikeTrain == 1);
-
+[spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, 10,0);
 
 %   If fewer spikes than specified - use the maximum number possible
 if  numel(spikeTimes) < nSpikes
@@ -32,13 +32,5 @@ end
 
 %   Uniformly sample n_spikes
 spikes2use = round(linspace(2, length(spikeTimes)-2, nSpikes));
-
-for i = 1:nSpikes
-    n = spikeTimes(spikes2use(i));
-    bin = trace(n-10:n+10);
-    pos = find(bin == min(bin))-11; % 11 = middle sample in bin
-    spikeWaveforms(:,i) = trace(n+pos-25:n+pos+25);
-end
-
-aveWaveform = median(spikeWaveforms');
+aveWaveform = median(spikeWaveforms(spikes2use,:));
 end
