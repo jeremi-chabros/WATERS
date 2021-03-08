@@ -69,7 +69,8 @@ function [spikeTimes, spikeWaveforms, trace] = detectSpikesCWT(...
 %   github.com/jeremi-chabros
 
 
-refPeriod = 2; % Only used by the threshold method
+refPeriod = 2; % Only used by the threshold method,
+               % here 2ms to avoid compound spike waveforms
 
 % Filter signal
 try
@@ -80,6 +81,7 @@ try
     [b, a] = butter(filterOrder, wn);
     trace = filtfilt(b, a, double(data));
 catch
+    % Will return this error in some other instances as well...
     error('Signal Processing Toolbox not found');
 end
 

@@ -92,7 +92,7 @@ classdef detectSpikes
                     % Dunno if this is the way to go... At this point it's
                     % more intuitive to just specify L as an absolute value
                     % as opposed to a ratio
-                    L = log(L)/36.7368; % Convert from commission/omission ratio to actual cost parameter
+                    %                     L = log(L)/36.7368; % Convert from commission/omission ratio to actual cost parameter
                     
                     if startsWith(fileName, self.dataPath)
                         saveName = [self.savePath strrep(fileName(1:end-4), self.dataPath, '') '_L_' num2str(L) '_spikes.mat'];
@@ -362,29 +362,19 @@ classdef detectSpikes
             %   email: jjc80@cam.ac.uk
             %   github.com/jeremi-chabros
             
-            [spikeTrain, ~, ~] = detect_spikes_threshold(self, trace, multiplier, refPeriod, fs, 0);
+            [spikeTrain, ~, ~] = detect_spikes_threshold(self,...
+                trace, multiplier, refPeriod, fs, 0);
             spikeTimes = find(spikeTrain == 1);
-            
-            
+            [spikeTimes, spikeWaveforms] = align_peaks(self, spikeTimes, trace, 10,0);
             %   If fewer spikes than specified - use the maximum number possible
             if  numel(spikeTimes) < nSpikes
                 nSpikes = sum(spikeTrain);
+                disp(['Not enough spikes detected with specified threshold, using ', num2str(nSpikes),'instead']);
             end
             
             %   Uniformly sample n_spikes
             spikes2use = round(linspace(2, length(spikeTimes)-2, nSpikes));
-            spikes2use = spikeTimes(spikes2use);
-
-            [spikeTimes, spikeWaveforms] = align_peaks(self, spikes2use, trace, 25, 0);
-
-            %             spikeWaveforms = zeros(51, nSpikes);
-            %             for i = 1:nSpikes
-            %                 n = spikeTimes(spikes2use(i));
-            %                 bin = trace(n-10:n+10);
-            %                 pos = find(bin == min(bin))-11; % 11 = middle sample in bin
-            %                 spikeWaveforms(:,i) = trace(n+pos-25:n+pos+25);
-            %             end
-            aveWaveform = median(spikeWaveforms,2);
+            aveWaveform = median(spikeWaveforms(spikes2use,:));
         end
         %%
         function [spikeTrain, filtTrace, threshold] = detect_spikes_threshold(self,...
@@ -412,8 +402,6 @@ classdef detectSpikes
             %   github.com/jeremi-chabros
             
             %   Filtering
-            %   Note: Filtering step should probably be added as a standalone
-            %   function in the future
             if filterFlag
                 lowpass = 600;
                 highpass = 8000;
@@ -425,8 +413,8 @@ classdef detectSpikes
             
             % Calculate the threshold (median absolute deviation)
             % See: https://en.wikipedia.org/wiki/Median_absolute_deviation
-            s = (mad(trace, 1)/0.6745);     % Faster than mad(X,1);
-            m = mean(trace);                % Note: filtered trace is already zero-mean
+            s = median(abs(trace-mean(trace)))/0.6745;     % Faster than mad(X,1);
+            m = median(trace);                % Note: filtered trace is already zero-mean
             threshold = m - multiplier*s;
             
             % Detect spikes (defined as threshold crossings)
@@ -477,21 +465,19 @@ classdef detectSpikes
             %   github.com/jeremi-chabros
             
             % Obtain thresholds for artifact removal
-            threshold = median(abs(trace - mean(trace))) / 0.6745;
-            
+            threshold = median(trace) - median(abs(trace - mean(trace)))/0.6745;
             if artifactFlg
                 minPeakThr = -threshold * varargin{1};
                 maxPeakThr = -threshold * varargin{2};
-                posPeakThr = threshold * varargin{3};
+                posPeakThr = -threshold * varargin{3};
             end
             
-            sFr = zeros(1, length(spikeTimes));
-            spikeWaveforms = zeros(51, length(spikeTimes));
-            
+            sFr = zeros(1,length(spikeTimes));
+            spikeWaveforms = zeros(length(spikeTimes),51);
             
             for i = 1:length(spikeTimes)
                 
-                if spikeTimes(i)+win < length(trace) && spikeTimes(i)-win > 1
+                if spikeTimes(i)+win < length(trace)-1 && spikeTimes(i)-win > 1
                     
                     % Look into a window around the spike
                     bin = trace(spikeTimes(i)-win:spikeTimes(i)+win);
@@ -501,35 +487,30 @@ classdef detectSpikes
                     pos = find(bin == negativePeak);
                     
                     % Remove artifacts and assign new timestamps
-                    
                     if artifactFlg
-                        if negativePeak < minPeakThr && positivePeak < posPeakThr
-                            
+                        if (negativePeak < minPeakThr) && (positivePeak < posPeakThr)
                             newSpikeTime = spikeTimes(i)+pos-win;
-                            if newSpikeTime+25 < length(trace) && newSpikeTime-win > 1
+                            if newSpikeTime+25 < length(trace) && newSpikeTime-25 > 1
                                 waveform = trace(newSpikeTime-25:newSpikeTime+25);
-                                
                                 sFr(i) = newSpikeTime;
-                                spikeWaveforms(:, i) = waveform;
+                                spikeWaveforms(i, :) = waveform;
                             end
                         end
                     else
                         newSpikeTime = spikeTimes(i)+pos-win;
                         if newSpikeTime+25 < length(trace) && newSpikeTime-win > 1
                             waveform = trace(newSpikeTime-25:newSpikeTime+25);
-                            
                             sFr(i) = newSpikeTime;
-                            spikeWaveforms(:, i) = waveform;
+                            spikeWaveforms(i, :) = waveform;
                         end
                     end
                 end
             end
             
-            % Clever pre-allocation & logical indexing made it a lot faster
+            % Pre-allocation & logical indexing made it a lot faster
             % than using (end+1) indexing in the loop above
             spikeTimes = sFr(sFr~=0);
-            spikeWaveforms = spikeWaveforms(:, sFr~=0);
-            
+            spikeWaveforms = spikeWaveforms(sFr~=0,:);
         end
         %%
         function [newWaveletIntegral, newWaveletSqN] = adapt_wavelet(self, aveWaveform)
@@ -577,7 +558,7 @@ classdef detectSpikes
             
             % Save the wavelet
             if newWaveletSqN == 1.0000 % Ugly but it is what it is
-
+                
                 % Using built-in cwt method requires saving the custom wavelet each
                 % time - currently overwriting as there is no reason to retrieve the
                 % wavelet
@@ -729,6 +710,7 @@ classdef detectSpikes
                 end
                 
                 %find which coefficients are non-zero
+                ct(ct<0)=0; % Delete if you allow positive peaks
                 Index = ct(i,:) ~= 0;
                 
                 %make a union with coefficients from previous scales
