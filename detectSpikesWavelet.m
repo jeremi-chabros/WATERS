@@ -168,9 +168,9 @@ if PltFlg == 1
     coefs_all=(flipud(abs(c)).*scale)';
     coefs = abs(sum(coefs_all,2));
     coefs = rescale(coefs, 0, Ns);
-    plot(-coefs+0.6,'k','linewidth',0.5);
-    xlim([1 length(c)])
-    ylim([-Ns Ns])
+%     plot(-coefs+0.6,'k','linewidth',0.5);
+%     xlim([1 length(c)])
+%     ylim([-Ns Ns])
     box off
     
     nexttile
@@ -197,7 +197,7 @@ if PltFlg == 1
     set(gcf,'color','w')
     xlabel('Time (ms)')
     ylabel("Voltage ("+char(956)+"V)");
-    set(gca, 'xtick', 0:250:length(Signal),'xticklabel', (0:250:length(Signal))/25,...
+    set(gca, 'xticklabel', get(gca,'xtick')/25,...
         'tickdir','out')
     set(gca, 'xlim',[1 length(Signal)],'ylim',yl);
     
@@ -369,7 +369,7 @@ function fcn = parse(Index,SFr,Wid)
 %The real challenge here is to merge multiple 1's that belong to the same
 %spike into one event and to locate that event
 
-Refract = 0.01;    %[ms] the refractory period -- can't resolve spikes
+Refract = 0.1;    %[ms] the refractory period -- can't resolve spikes
 %that are closer than Refract;
 Refract = round(Refract * SFr);
 

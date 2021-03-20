@@ -120,7 +120,7 @@ try
     else
         
         % Detect spikes with wavelet method
-        spikeTimes = detectSpikesWavelet(trace, fs/1000, Wid, Ns, 'c', L, wname, 0, 0);
+        spikeTimes = detectSpikesWavelet(trace, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
     end
     
     % Align spikes by negative peak & remove artifacts by amplitude
