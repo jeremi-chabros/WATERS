@@ -28,7 +28,6 @@ arguments
     dataPath;
     savePath;
     option;
-    
     files;
     params;
 end
@@ -58,6 +57,11 @@ if exist('option', 'var') && strcmp(option, 'list')
 else
     files = dir([dataPath '*.mat']);
 end
+thresholds = params.thresholds;
+thrList = strcat( 'thr', thresholds);
+thrList = strrep(thrList, '.', 'p')';
+wnameList = horzcat(wnameList', thrList);
+
 
 for recording = 1:numel(files)
     
@@ -105,8 +109,11 @@ for recording = 1:numel(files)
             disp('Detecting spikes...');
             disp(['L = ' num2str(L)]);
             
-            spikeTimes = {};
-            spikeWaveforms = {};
+            % Pre-allocate for your own good
+            spikeTimes = cell(1,60);
+            spikeWaveforms = cell(1,60);
+            mad = zeros(1,60);
+            variance = zeros(1,60);
             
             % Run spike detection
             for channel = 1:length(channels)
@@ -140,6 +147,8 @@ for recording = 1:numel(files)
                 
                 spikeTimes{channel} = spikeStruct;
                 spikeWaveforms{channel} = waveStruct;
+                mad(channel) = median(trace)-median(abs(trace - mean(trace))) / 0.6745;
+                variance(channel) = var(trace);
                 
             end
             
@@ -147,13 +156,16 @@ for recording = 1:numel(files)
             
             % Save results
             
-            save_suffix = ['_' strrep(num2str(L), '.', 'p')];
-            params.save_suffix = save_suffix;
-            params.fs = fs;
-            
-            spikeDetectionResult = struct();
-            spikeDetectionResult.method = 'CWT';
-            spikeDetectionResult.params = params;
+             % Save results
+             save_suffix = ['_' strrep(num2str(L), '.', 'p')];
+             params.save_suffix = save_suffix;
+             params.fs = fs;
+             params.variance = variance;
+             params.mad = mad;
+             
+             spikeDetectionResult = struct();
+             spikeDetectionResult.method = 'CWT';
+             spikeDetectionResult.params = params;
             
             saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
             disp(['Saving results to: ' saveName]);
