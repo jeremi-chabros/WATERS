@@ -70,7 +70,8 @@ function [spikeTimes, spikeWaveforms, trace] = detectSpikesCWT(...
 
 
 refPeriod = 2; % Only used by the threshold method,
-               % here 2ms to avoid compound spike waveforms
+% here 2ms to avoid compound spike waveforms in adapting
+% wavelet
 
 % Filter signal
 try
@@ -116,13 +117,21 @@ try
         multiplier = str2num(multiplier);
         [spikeTrain, ~, ~] = detectSpikesThreshold(trace, multiplier, 0.2, fs, 0);
         spikeTimes = find(spikeTrain == 1);
-        spikeTimes = unique(spikeTimes);
     else
-        
         % Detect spikes with wavelet method
-        spikeTimes = detectSpikesWavelet(trace, fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
+        % Note: Runs in 60-second chunks
+        j=1;
+        spikeTimes = [];
+        for segment = 1:round(length(trace)/fs/60)
+            if j+(60*fs)<=length(trace)
+                spikeVec = j+detectSpikesWavelet(trace(j:j+(60*fs)), fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
+            else
+                spikeVec = j+detectSpikesWavelet(trace(j:end), fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
+            end
+            spikeTimes = horzcat(spikeTimes, spikeVec);
+            j = j+(60*fs);
+        end
     end
-    
     % Align spikes by negative peak & remove artifacts by amplitude
     [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win, 1,...
         minPeakThrMultiplier,...

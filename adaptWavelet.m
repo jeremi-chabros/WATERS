@@ -22,7 +22,7 @@ template = aveWaveform;
 template = spline(1:length(template), template, linspace(1, length(template), 100));
 
 % Gaussian smoothing
-w = gausswin(6);
+w = gausswin(10);
 y = filter(w,1,template);
 y = rescale(y);
 y = y - mean(y);

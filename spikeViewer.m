@@ -78,9 +78,9 @@ classdef spikeViewer < matlab.apps.AppBase
             
             cla(app.traceAx, 'reset');
             
-            st = app.spikeVector(app.spikeIndex) - (app.binMs/2)*25;
-            en = app.spikeVector(app.spikeIndex) + (app.binMs/2)*25;
-
+            st = app.spikeVector(app.spikeIndex) - ((app.binMs/2)*25);
+            en = app.spikeVector(app.spikeIndex) + ((app.binMs/2)*25);
+            
             plot(app.traceAx, app.trace(st:en), 'k');
             
             xlim(app.traceAx, [1 (app.binMs*25+1)]);
@@ -94,7 +94,7 @@ classdef spikeViewer < matlab.apps.AppBase
             hold(app.traceAx, 'on');
             
             % Plot spike markers
-            pos = [find(app.spikeVector >= st) find(app.spikeVector <= en)];
+            pos = vertcat(find(app.spikeVector >= st),find(app.spikeVector <= en));
             spVector = app.spikeVector(pos) - st;
             y = repmat(app.yOffset, length(pos), 1);
             scatter(app.traceAx, (spVector)', y(:,1), 'v','filled');
@@ -103,7 +103,7 @@ classdef spikeViewer < matlab.apps.AppBase
         
         function plotSpike(app)
             cla(app.spikeAx, 'reset');
-            spike = app.spikes(:, app.spikeIndex);
+            spike = app.spikes(app.spikeIndex,:);
             spike = spline(1:length(spike), spike, linspace(1, length(spike), 100));
             plot(app.spikeAx, spike,...
                 'k', "LineWidth", 2);
@@ -118,13 +118,13 @@ classdef spikeViewer < matlab.apps.AppBase
         function plotOverlay(app)
             cla(app.spikeAx, 'reset');
             
-            plot(app.spikeAx, app.spikes(:, 1:200),...
+            plot(app.spikeAx, app.spikes( 1:200,:)',...
                 'Color', [0.9 0.9 0.9],...
                 'LineWidth', 0.2);
             
             hold(app.spikeAx, 'on');
             
-            aveSpike = median(app.spikes');
+            aveSpike = median(app.spikes);
             plot(app.spikeAx, aveSpike,...
                 'Color', [0 0 0],...
                 'LineWidth', 1.5);
@@ -159,6 +159,7 @@ classdef spikeViewer < matlab.apps.AppBase
             app.Lamp.Color = [0.39,0.83,0.07];
             app.WaveletDropDown.Items = strrep(fieldnames(app.spikeTimes{1}), 'p', '.');
             
+            
             % Load raw data
             rawFileName = [fileName(1:strfind(fileName, '_L')-1) '.mat'];
             rawFilePath = [pwd filesep];
@@ -189,8 +190,16 @@ classdef spikeViewer < matlab.apps.AppBase
             app.yOffset = max(app.trace)-2;
             
             app.spikeVector = app.spikeTimes{app.channel}.(app.wname);
-            app.spikeVector = app.spikeVector * 25000;
+            
             app.spikes = app.spikeWaveforms{app.channel}.(app.wname);
+            
+            switch params.unit
+                case 's'
+                     app.spikeVector = round(app.spikeVector * 25000);
+                case 'ms'
+                     app.spikeVector = round(app.spikeVector * 25);
+                case 'frames'
+            end
             
             spikeCount = length(app.spikeVector);
             app.SpikeSlider.Limits = [1, spikeCount];

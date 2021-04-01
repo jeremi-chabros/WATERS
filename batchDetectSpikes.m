@@ -128,17 +128,15 @@ for recording = 1:numel(files)
                     valid_wname = strrep(wname, '.', 'p');
                     spikeWaves = [];
                     spikeFrames = [];
-                    
                     if ~(ismember(channel, grd))
                         
                         [spikeFrames, spikeWaves, ~] = ...
                             detectSpikesCWT(trace,fs,wid,wname,L,nScales, ...
                             multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
                             maxPeakThrMultiplier, posPeakThrMultiplier);
-                        
+
                         waveStruct.(valid_wname) = spikeWaves;
                         spikeStruct.(valid_wname) = spikeFrames;
-                        
                     else
                         waveStruct.(valid_wname) = [];
                         spikeStruct.(valid_wname) = [];
@@ -156,16 +154,16 @@ for recording = 1:numel(files)
             
             % Save results
             
-             % Save results
-             save_suffix = ['_' strrep(num2str(L), '.', 'p')];
-             params.save_suffix = save_suffix;
-             params.fs = fs;
-             params.variance = variance;
-             params.mad = mad;
-             
-             spikeDetectionResult = struct();
-             spikeDetectionResult.method = 'CWT';
-             spikeDetectionResult.params = params;
+            % Save results
+            save_suffix = ['_' strrep(num2str(L), '.', 'p')];
+            params.save_suffix = save_suffix;
+            params.fs = fs;
+            params.variance = variance;
+            params.mad = mad;
+            
+            spikeDetectionResult = struct();
+            spikeDetectionResult.method = 'CWT';
+            spikeDetectionResult.params = params;
             
             saveName = [savePath fileName(1:end-4) '_L_' num2str(L) '_spikes.mat'];
             disp(['Saving results to: ' saveName]);
