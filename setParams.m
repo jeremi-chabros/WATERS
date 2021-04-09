@@ -126,15 +126,16 @@ classdef setParams < matlab.apps.AppBase
             app.MultiplierEditFieldLabel.HorizontalAlignment = 'right';
             app.MultiplierEditFieldLabel.Position = [74 403 55 22];
             app.MultiplierEditFieldLabel.Text = 'Multiplier';
-            app.MultiplierEditFieldLabel.Tooltip = 'The threshold multiplier used in spike detection. List separated by commas. At least 1 required. First entry will be used to extract waveform to adapt wavelet.';
+            app.MultiplierEditFieldLabel.Tooltip = 'The threshold multiplier used in spike detection. List separated by commas. At least 1 required. First entry will be used to extract waveforms to adapt the custom wavelet.';
 
             % Create MultiplierEditField
             app.MultiplierEditField = uieditfield(app.UIFigure, 'text');
             app.MultiplierEditField.Position = [144 403 100 22];
-            app.MultiplierEditField.Value = '3.5';
+            app.MultiplierEditField.Value = '2.5';
             app.MultiplierEditField.Tooltip = app.MultiplierEditField.Tooltip;
             app.MultiplierEditField.HorizontalAlignment = 'right';
-
+            app.MultiplierEditField.Tooltip = app.MultiplierEditFieldLabel.Tooltip;
+            
             % Create NospikesEditFieldLabel
             app.NospikesEditFieldLabel = uilabel(app.UIFigure);
             app.NospikesEditFieldLabel.HorizontalAlignment = 'right';
@@ -168,13 +169,13 @@ classdef setParams < matlab.apps.AppBase
             app.WidthmsEditFieldLabel.HorizontalAlignment = 'right';
             app.WidthmsEditFieldLabel.Position = [66 301 63 22];
             app.WidthmsEditFieldLabel.Text = 'Width [ms]';
-            app.WidthmsEditFieldLabel.Tooltip = 'Width of the voltage transient (spike) in [ms], recommended: 0.5, 1';
+            app.WidthmsEditFieldLabel.Tooltip = 'Width of the voltage transient (spike) in [ms], recommended: 0.4, 0.8';
 
             % Create WidthmsEditField
             app.WidthmsEditField = uieditfield(app.UIFigure, 'text');
             app.WidthmsEditField.HorizontalAlignment = 'right';
             app.WidthmsEditField.Position = [144 301 100 22];
-            app.WidthmsEditField.Value = '0.5, 1';
+            app.WidthmsEditField.Value = '0.4, 0.8';
             app.WidthmsEditField.Tooltip = app.WidthmsEditFieldLabel.Tooltip;
 
             % Create GroundedEditFieldLabel
@@ -195,7 +196,7 @@ classdef setParams < matlab.apps.AppBase
             app.CostparametersEditFieldLabel.HorizontalAlignment = 'right';
             app.CostparametersEditFieldLabel.Position = [34 233 95 22];
             app.CostparametersEditFieldLabel.Text = 'Cost parameters';
-            app.CostparametersEditFieldLabel.Tooltip = 'List of cost parameters (separated by comma). Cost parameter = Cost(comcission)/Cost(omission)';
+            app.CostparametersEditFieldLabel.Tooltip = 'List of cost parameters (separated by comma).';
 
             % Create CostparametersEditField
             app.CostparametersEditField = uieditfield(app.UIFigure, 'text');
@@ -275,14 +276,14 @@ classdef setParams < matlab.apps.AppBase
             app.SpiketimeunitDropDownLabel.Position = [17 34 100 22];
             app.SpiketimeunitDropDownLabel.HorizontalAlignment = 'right';
             app.SpiketimeunitDropDownLabel.Text = 'Spike time unit';
-            app.SpiketimeunitDropDownLabel.Tooltip = 'Select time unit in which the spikes will be saved';
+            app.SpiketimeunitDropDownLabel.Tooltip = 'Select the time unit in which the spikes will be saved';
             
             % Create SpiketimeunitDropDown
             app.SpiketimeunitDropDown = uidropdown(app.UIFigure);
             app.SpiketimeunitDropDown.Position = [144 34 100 22];
             app.SpiketimeunitDropDown.Items = {'[frames]', '[s]', '[ms]'};
             app.SpiketimeunitDropDown.ValueChangedFcn = createCallbackFcn(app, @SpiketimeunitDropDownValueChanged, true);
-            app.SpiketimeunitDropDown.Value = '[frames]';
+            app.SpiketimeunitDropDown.Value = '[s]';
             app.SpiketimeunitDropDown.Tooltip = app.SpiketimeunitDropDownLabel.Tooltip;
 
             % Show the figure after all components are created

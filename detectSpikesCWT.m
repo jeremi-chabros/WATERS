@@ -124,9 +124,9 @@ try
         spikeTimes = [];
         for segment = 1:round(length(trace)/fs/60)
             if j+(60*fs)<=length(trace)
-                spikeVec = j+detectSpikesWavelet(trace(j:j+(60*fs)), fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
+                spikeVec = j + detectSpikesWavelet(trace(j:j+(60*fs)), fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
             else
-                spikeVec = j+detectSpikesWavelet(trace(j:end), fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
+                spikeVec = j + detectSpikesWavelet(trace(j:end), fs/1000, Wid, Ns, 'l', L, wname, 0, 0);
             end
             spikeTimes = horzcat(spikeTimes, spikeVec);
             j = j+(60*fs);
