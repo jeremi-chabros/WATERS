@@ -1,4 +1,4 @@
-# CuTe 
+# WATERS 
 
 Spike detection based on continuous wavelet transform with data-driven templates.
 
