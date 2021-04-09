@@ -30,10 +30,19 @@ function [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win,...
 
 % Obtain thresholds for artifact removal
 threshold = median(trace) - median(abs(trace - mean(trace)))/0.6745;
+
+% Comment out to use the multiplier
+% if artifactFlg
+%     minPeakThr = threshold * varargin{1};
+%     maxPeakThr = -threshold * varargin{2};
+%     posPeakThr = -threshold * varargin{3};
+% end
+
+% Uses absolute threshold in microvolts
 if artifactFlg
-    minPeakThr = threshold * varargin{1};
-    maxPeakThr = -threshold * varargin{2};
-    posPeakThr = -threshold * varargin{3};
+    minPeakThr = varargin{1}; % e.g. -7 uV
+    maxPeakThr = varargin{2}; % e.g. -100 uV
+    posPeakThr = varargin{3}; % % e.g. 100 uV
 end
 
 sFr = zeros(length(spikeTimes),1);

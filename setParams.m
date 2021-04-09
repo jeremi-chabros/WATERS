@@ -237,12 +237,12 @@ classdef setParams < matlab.apps.AppBase
             app.MinvethresholdEditFieldLabel.HorizontalAlignment = 'right';
             app.MinvethresholdEditFieldLabel.Position = [30 133 99 22];
             app.MinvethresholdEditFieldLabel.Text = 'Min -ve threshold';
-            app.MinvethresholdEditFieldLabel.Tooltip = 'Threshold multiplier that specifies the minimum negative peak amplitude of a spike';
+            app.MinvethresholdEditFieldLabel.Tooltip = 'Threshold that specifies the minimum negative peak amplitude of a spike (type in negative sign)';
 
             % Create MinvethresholdEditField
             app.MinvethresholdEditField = uieditfield(app.UIFigure, 'numeric');
             app.MinvethresholdEditField.Position = [144 133 100 22];
-            app.MinvethresholdEditField.Value = 2;
+            app.MinvethresholdEditField.Value = -5;
             app.MinvethresholdEditField.Tooltip = app.MinvethresholdEditFieldLabel.Tooltip;
 
             % Create MaxvethresholdEditField_2Label
@@ -250,12 +250,12 @@ classdef setParams < matlab.apps.AppBase
             app.MaxvethresholdEditField_2Label.HorizontalAlignment = 'right';
             app.MaxvethresholdEditField_2Label.Position = [20 100 102 22];
             app.MaxvethresholdEditField_2Label.Text = 'Max -ve threshold';
-            app.MaxvethresholdEditField_2Label.Tooltip = 'Threshold multiplier that specifies the maximum negative peak amplitude of a spike';
+            app.MaxvethresholdEditField_2Label.Tooltip = 'Threshold that specifies the maximum negative peak amplitude of a spike (type in the negative sign)';
 
             % Create MaxvethresholdEditField_2
             app.MaxvethresholdEditField_2 = uieditfield(app.UIFigure, 'numeric');
             app.MaxvethresholdEditField_2.Position = [144 100 100 22];
-            app.MaxvethresholdEditField_2.Value = 10;
+            app.MaxvethresholdEditField_2.Value = -100;
             app.MaxvethresholdEditField_2.Tooltip = app.MaxvethresholdEditField_2Label.Tooltip;
 
             % Create MaxvethresholdEditFieldLabel
@@ -263,12 +263,12 @@ classdef setParams < matlab.apps.AppBase
             app.MaxvethresholdEditFieldLabel.HorizontalAlignment = 'right';
             app.MaxvethresholdEditFieldLabel.Position = [17 67 105 22];
             app.MaxvethresholdEditFieldLabel.Text = 'Max +ve threshold';
-            app.MaxvethresholdEditFieldLabel.Tooltip = 'Threshold multiplier that specifies the maximum positive peak amplitude of a spike';
+            app.MaxvethresholdEditFieldLabel.Tooltip = 'Threshold that specifies the maximum positive peak amplitude of a spike (type in the positive sign)';
             
             % Create MaxvethresholdEditField
             app.MaxvethresholdEditField = uieditfield(app.UIFigure, 'numeric');
             app.MaxvethresholdEditField.Position = [144 67 100 22];
-            app.MaxvethresholdEditField.Value = 5;
+            app.MaxvethresholdEditField.Value = 100;
             app.MaxvethresholdEditField.Tooltip = app.MaxvethresholdEditFieldLabel.Tooltip;
             
             % Create SpiketimeunitDropDownLabel

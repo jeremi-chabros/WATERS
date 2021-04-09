@@ -32,6 +32,11 @@ arguments
     params;
 end
 
+if ~endsWith(dataPath, filesep)
+    dataPath = [dataPath filesep];
+end
+addpath(dataPath);
+
 %   Load parameters
 if ~exist('params', 'var')
     load('params.mat');
@@ -60,12 +65,13 @@ end
 thresholds = params.thresholds;
 thrList = strcat( 'thr', thresholds);
 thrList = strrep(thrList, '.', 'p')';
-wnameList = horzcat(wnameList', thrList);
+wnameList = horzcat(wnameList, thrList);
 
+% progressbar(['File: '  '/' num2str(numel(files))]);
 
 for recording = 1:numel(files)
     
-    progressbar(['File: ' num2str(recording) '/' num2str(numel(files))]);
+%     progressbar(['File: ' num2str(recording) '/' num2str(numel(files))]);
     
     if exist('option', 'var') && strcmp(option, 'list')
         fileName = files{recording};
@@ -87,15 +93,12 @@ for recording = 1:numel(files)
     % Truncate the data if specified
     if isfield(params, 'subsample_time')
         if ~isempty(params.subsample_time)
-            if params.subsample_time(1) == 1
+            if params.subsample_time(1) <= 1
                 start_frame = 1;
-                
             else
                 start_frame = params.subsample_time(1) * fs;
-                
             end
             end_frame = params.subsample_time(2) * fs;
-            
         end
         data = data(start_frame:end_frame, :);
         params.duration = length(data)/fs;
@@ -126,17 +129,27 @@ for recording = 1:numel(files)
                     
                     wname = char(wnameList{wname});
                     valid_wname = strrep(wname, '.', 'p');
+                    actual_wname = strrep(wname, 'p', '.');
+                    
                     spikeWaves = [];
                     spikeFrames = [];
                     if ~(ismember(channel, grd))
                         
                         [spikeFrames, spikeWaves, ~] = ...
-                            detectSpikesCWT(trace,fs,wid,wname,L,nScales, ...
+                            detectSpikesCWT(trace,fs,wid,actual_wname,L,nScales, ...
                             multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
                             maxPeakThrMultiplier, posPeakThrMultiplier);
+                        
+                        switch params.unit
+                            case 'ms'
+                                spikeStruct.(valid_wname) = spikeFrames/(fs/1000);
+                            case 's'
+                                spikeStruct.(valid_wname) = spikeFrames/fs;
+                            case 'frames'
+                                spikeStruct.(valid_wname) = spikeFrames;
+                        end
 
                         waveStruct.(valid_wname) = spikeWaves;
-                        spikeStruct.(valid_wname) = spikeFrames;
                     else
                         waveStruct.(valid_wname) = [];
                         spikeStruct.(valid_wname) = [];
