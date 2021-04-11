@@ -132,7 +132,6 @@ try
             j = j+(60*fs);
         end
     end
-    
     % Align spikes by negative peak & remove artifacts by amplitude
     remove_artifacts = 1; % remove artifacts = 1, not remove = 0;
     [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win, remove_artifacts,...

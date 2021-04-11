@@ -61,7 +61,7 @@ for i = 1:length(spikeTimes)
         
         % Remove artifacts and assign new timestamps
         if artifactFlg
-            if (negativePeak < minPeakThr) && (positivePeak < posPeakThr)
+            if (negativePeak < minPeakThr) && (positivePeak < posPeakThr) && (negativePeak > maxPeakThr)
                 newSpikeTime = spikeTimes(i)+pos-win;
                 if newSpikeTime+25 < length(trace) && newSpikeTime-25 > 1
                     waveform = trace(newSpikeTime-25:newSpikeTime+25);

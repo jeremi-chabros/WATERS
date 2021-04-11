@@ -88,8 +88,8 @@ classdef setParams < matlab.apps.AppBase
             end
             
             params.minPeakThrMultiplier = app.MinvethresholdEditField.Value;
-            params.maxPeakThrMultiplier = app.MaxvethresholdEditField.Value;
-            params.posPeakThrMultiplier = app.MaxvethresholdEditField_2.Value;
+            params.maxPeakThrMultiplier = app.MaxvethresholdEditField_2.Value;
+            params.posPeakThrMultiplier = app.MaxvethresholdEditField.Value;
             
             unit = strrep(app.SpiketimeunitDropDown.Value, '[', '');
             unit = strrep(unit, ']', '');

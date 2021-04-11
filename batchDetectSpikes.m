@@ -52,6 +52,7 @@ wnameList = params.wnameList;
 minPeakThrMultiplier = params.minPeakThrMultiplier;
 maxPeakThrMultiplier = params.maxPeakThrMultiplier;
 posPeakThrMultiplier = params.posPeakThrMultiplier;
+unit = params.unit;
 
 %%
 % Get files
@@ -67,11 +68,11 @@ thrList = strcat( 'thr', thresholds);
 thrList = strrep(thrList, '.', 'p')';
 wnameList = horzcat(wnameList, thrList);
 
-% progressbar(['File: '  '/' num2str(numel(files))]);
+progressbar('File', 'Electrode');
 
 for recording = 1:numel(files)
     
-%     progressbar(['File: ' num2str(recording) '/' num2str(numel(files))]);
+    progressbar((recording-1)/numel(files), []);
     
     if exist('option', 'var') && strcmp(option, 'list')
         fileName = files{recording};
@@ -121,6 +122,8 @@ for recording = 1:numel(files)
             % Run spike detection
             for channel = 1:length(channels)
                 
+                progressbar([], [(channel-1)/length(channels)]);
+                
                 spikeStruct = struct();
                 waveStruct = struct();
                 trace = data(:, channel);
@@ -139,8 +142,8 @@ for recording = 1:numel(files)
                             detectSpikesCWT(trace,fs,wid,actual_wname,L,nScales, ...
                             multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
                             maxPeakThrMultiplier, posPeakThrMultiplier);
-                        
-                        switch params.unit
+                    
+                        switch unit
                             case 'ms'
                                 spikeStruct.(valid_wname) = spikeFrames/(fs/1000);
                             case 's'

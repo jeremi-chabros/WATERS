@@ -1,8 +1,9 @@
-% clearvars; clc;
+clearvars; clc;
 dataPath = 'C:\Users\Sand Box\Dropbox (Cambridge University)\NOG MEA Data\MEA Data Mecp2 Project Jan 2019-\MAT files\Mecp2\Recordings\';
 addpath(dataPath);
-
-file = load('MPT070119_6A_DIV28.mat');
+files = dir('*.mat');
+f = randi(length(files),1);
+file = load(files(f).name);
 %%
 close all
 global fs duration TP FP FN nSamples
@@ -14,7 +15,7 @@ nSamples = 0;
 duration = length(file.dat)/fs;
 
 channel = randi(60,1); % Look into a random channel
-channel = 21;
+channel = 23;
 trace_raw = file.dat(1:fs*60, channel);
 % trace_raw = file.dat(:,channel);
 spikeTimes = struct;
@@ -22,17 +23,18 @@ spikeTimes = struct;
 % PARAMS
 Ns = 2;
 multiplier = 3.0;
-wnames = {'mea','bior1.5','bior1.3', 'db2'};
-% wnames = {'mea'};
-Wid = [.4 .8];
-L = -0.35;
+% wnames = {'mea','bior1.5','bior1.3', 'db2'};
+wnames = {'mea'};
+Wid = [.5, 1];
+L = -0.3765;
 nSpikes = 500;
 ttx = 0;
-minPeakThrMultiplier = 0;
+minPeakThrMultiplier = -5;
 maxPeakThrMultiplier = -100;
 posPeakThrMultiplier = 100;
 
 % Run CWT spike detection
+tic
 for wname = wnames
     good_wname = strrep(wname,'.','p');
     
@@ -40,9 +42,10 @@ for wname = wnames
         trace_raw, fs, Wid, wname{1}, L, Ns, multiplier, nSpikes, ttx, ...
         minPeakThrMultiplier, maxPeakThrMultiplier, posPeakThrMultiplier);
 end
+toc
 
 % Threshold spike detection
-[frames, ~, threshold] = detectSpikesThreshold(trace, 3.5, 0.1, fs, 0);
+[frames, ~, threshold] = detectSpikesThreshold(trace, 3, 0.1, fs, 0);
 [spikeTimes.('threshold'), spike_waves_thr] = alignPeaks(find(frames==1), trace, 10,...
     1, minPeakThrMultiplier, maxPeakThrMultiplier, posPeakThrMultiplier);
 
@@ -64,7 +67,8 @@ set(gcf,'color','w');
 h = plot(trace-mean(trace), 'k', 'linewidth', .5);
 hold on
 
-admissible = fieldnames(spikeTimes);
+% admissible = fieldnames(spikeTimes);
+admissible = {'all'};
 lineStyles = linspecer(length(admissible));
 
 for m = 1:length(admissible)
