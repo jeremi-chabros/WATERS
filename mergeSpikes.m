@@ -46,7 +46,6 @@ intersect_matrix = zeros(length(all_spikes_bin),length(methods));
 for method = 1:length(methods)
     spk_vec = zeros(size(all_spikes_bin));
     intersect_vec = zeros(size(all_spikes_bin));
-%     spk_vec(round(spike_times.(methods{method})*25000)) = 1;
     spk_vec(spike_times.(methods{method})) = 1;
     intersect_vec = spk_vec .* all_spikes_bin;
     intersect_matrix(:,method) = intersect_vec';
