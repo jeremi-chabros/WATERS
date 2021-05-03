@@ -1,5 +1,5 @@
 clearvars; clc;
-
+%{
 % For MECP2 data:
 files_list = readtable('C:\Users\Sand Box\Dropbox (Cambridge University)\NOG MEA Data\MEA Data Mecp2 Project Jan 2019-\MAT files\Mecp2\files_genotypes.csv');
 culture_names = files_list.culture;
@@ -30,4 +30,41 @@ params.costList = [-0.3765];
 params.thresholds = {'3.0'};
 %%
 batchDetectSpikes(dataPath, savePath, option, files, params);
+%}
+
+%% Old version code from Tim to test things
+
+clearvars; clc;
+dataPath = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/';
+savePath = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/results/';
+
+addpath(dataPath)
+
+option = 'list';
+files = { ... 
+'Organoid 180518 slice 7 old MEA 3D stim recording 2.mat'};
+% , ...     
+% 'Organoid 180518 slice 7 old MEA 3D stim recording 3.mat'};
+
+% files = {
+%     '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/Organoid 180518 slice 7 old MEA 3D stim recording 3.mat',
+ %    '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/Organoid 180518 slice 7 old MEA 3D stim recording 2.mat', ...
+% };
+
+load params
+params.wnameList = {'mea','bior1.5'}';
+params.costList = -0.3;
+params.thresholds = {'2.5', '2.5'};
+params.subsample_time = [1, 60];
+
+% adding HDBSCAN path (please specify your own path to HDBSCAN)
+addpath(genpath('/home/timsit/HDBSCAN/'));
+
+params.multiple_templates = 1; % whether to get multiple templates to adapt
+% Set the number of spikes used to make the template (!)
+params.nSpikes = 1000;
+
+batchDetectSpikes(dataPath, savePath, option, files, params);
+
+
 

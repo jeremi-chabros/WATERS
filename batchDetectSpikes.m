@@ -17,7 +17,8 @@ function batchDetectSpikes(dataPath, savePath, option, files, params)
 %
 %   params: [optional] argument to pass structure containing parameters;
 %           otherwise, run setParams() first to set parameters
-
+      % nSpikes : number of spikes use to make the custom threshold
+      % template
 
 % Author:
 %   Jeremy Chabros, University of Cambridge, 2020
@@ -53,6 +54,11 @@ minPeakThrMultiplier = params.minPeakThrMultiplier;
 maxPeakThrMultiplier = params.maxPeakThrMultiplier;
 posPeakThrMultiplier = params.posPeakThrMultiplier;
 unit = params.unit;
+
+if ~isfield(params, 'multiple_templates')
+    params.multiple_templates = 0;
+end 
+
 
 %%
 % Get files
@@ -141,18 +147,37 @@ for recording = 1:numel(files)
                         [spikeFrames, spikeWaves, ~] = ...
                             detectSpikesCWT(trace,fs,wid,actual_wname,L,nScales, ...
                             multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
-                            maxPeakThrMultiplier, posPeakThrMultiplier);
-                    
-                        switch unit
-                            case 'ms'
-                                spikeStruct.(valid_wname) = spikeFrames/(fs/1000);
-                            case 's'
-                                spikeStruct.(valid_wname) = spikeFrames/fs;
-                            case 'frames'
-                                spikeStruct.(valid_wname) = spikeFrames;
-                        end
-
-                        waveStruct.(valid_wname) = spikeWaves;
+                            maxPeakThrMultiplier, posPeakThrMultiplier, ...
+                            params.multiple_templates);
+                        
+                        if iscell(spikeFrames)
+                            
+                            for cell_idx = 1:length(spikeFrames)
+                                custom_spike_frames = spikeFrames{cell_idx};
+                                custom_spike_wave = spikeWaves{cell_idx};
+                                valid_wname_w_idx = strcat(valid_wname, num2str(cell_idx));
+                                switch unit
+                                    case 'ms'
+                                        spikeStruct.(valid_wname_w_idx) = custom_spike_frames/(fs/1000);
+                                    case 's'
+                                        spikeStruct.(valid_wname_w_idx) = custom_spike_frames/fs;
+                                    case 'frames'
+                                        spikeStruct.(valid_wname_w_idx) = custom_spike_frames;
+                                end
+                                waveStruct.(valid_wname_w_idx) = custom_spike_wave;
+                            end 
+                            
+                        else
+                            switch unit
+                                case 'ms'
+                                    spikeStruct.(valid_wname) = spikeFrames/(fs/1000);
+                                case 's'
+                                    spikeStruct.(valid_wname) = spikeFrames/fs;
+                                case 'frames'
+                                    spikeStruct.(valid_wname) = spikeFrames;
+                            end
+                            waveStruct.(valid_wname) = spikeWaves;
+                        end 
                     else
                         waveStruct.(valid_wname) = [];
                         spikeStruct.(valid_wname) = [];

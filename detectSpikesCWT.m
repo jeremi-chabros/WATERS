@@ -1,6 +1,7 @@
 function [spikeTimes, spikeWaveforms, trace] = detectSpikesCWT(...
     data, fs, Wid, wname, L, Ns, multiplier, nSpikes, ttx, ...
-    minPeakThrMultiplier, maxPeakThrMultiplier, posPeakThrMultiplier)
+    minPeakThrMultiplier, maxPeakThrMultiplier, posPeakThrMultiplier, ...
+    multiple_templates)
 
 % Description:
 %
@@ -93,17 +94,33 @@ if strcmp(wname, 'mea') && ~ttx
     %   Use threshold-based spike detection to obtain the median waveform
     %   from nSpikes
     try
-        [aveWaveform, ~] = getTemplate(trace, multiplier, refPeriod, fs, nSpikes);
+        [aveWaveform, ~] = getTemplate(trace, multiplier, refPeriod, fs, nSpikes, ...
+            multiple_templates);
+        % TODO: may be better to specify why things failed (eg. threshold
+        % too high and so no spikes detected with threshold?)
     catch
         warning('Failed to obtain mean waveform');
     end
     
-    %   Adapt custom wavelet from the waveform obtained above
-    try
-        adaptWavelet(aveWaveform);
-    catch
-        warning('Failed to adapt custom wavelet');
+    if multiple_templates
+        
+        num_ave_waveform = size(aveWaveform, 2);
+        
+        for waveform_idx = 1:num_ave_waveform 
+            wavelet_name = strcat('mea', num2str(waveform_idx));
+            waveform = aveWaveform(:, waveform_idx);
+            adaptWavelet(waveform, wavelet_name);
+        end 
+        
+    else
+        %   Adapt custom wavelet from the waveform obtained above
+        try
+            adaptWavelet(aveWaveform);
+        catch
+            warning('Failed to adapt custom wavelet');
+        end
     end
+    
 end
 
 try
@@ -117,6 +134,41 @@ try
         multiplier = str2num(multiplier);
         [spikeTrain, ~, ~] = detectSpikesThreshold(trace, multiplier, 0.2, fs, 0);
         spikeTimes = find(spikeTrain == 1);
+    elseif startsWith(wname, 'mea') && multiple_templates
+        
+        mult_template_spike_times = {};
+        mult_template_spike_waveforms = {};
+        
+        for waveform_idx = 1:num_ave_waveform 
+            wavelet_name = strcat('mea', num2str(waveform_idx));
+            % Detect spikes with wavelet method
+            % Note: Runs in 60-second chunks
+            j=1;
+            spikeTimes = [];
+            for segment = 1:round(length(trace)/fs/60)
+                if j+(60*fs)<=length(trace)
+                    spikeVec = j + detectSpikesWavelet(trace(j:j+(60*fs)), fs/1000, Wid, Ns, 'l', L, wavelet_name, 0, 0);
+                else
+                    spikeVec = j + detectSpikesWavelet(trace(j:end), fs/1000, Wid, Ns, 'l', L, wavelet_name, 0, 0);
+                end
+                spikeTimes = horzcat(spikeTimes, spikeVec);
+                j = j+(60*fs);
+            end
+            % Align spikes by negative peak & remove artifacts by amplitude
+            remove_artifacts = 1; % remove artifacts = 1, not remove = 0;
+            [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win, remove_artifacts,...
+                minPeakThrMultiplier,...
+                maxPeakThrMultiplier,...
+                posPeakThrMultiplier);
+            
+            mult_template_spike_times{waveform_idx} = spikeTimes;
+            mult_template_spike_waveforms{waveform_idx} = spikeWaveforms;
+        end 
+        
+        % Outputs a cell rather than the usual vector of spike times
+        spikeTimes = mult_template_spike_times; 
+        spikeWaveforms = mult_template_spike_waveforms;
+        
     else
         % Detect spikes with wavelet method
         % Note: Runs in 60-second chunks
@@ -131,13 +183,14 @@ try
             spikeTimes = horzcat(spikeTimes, spikeVec);
             j = j+(60*fs);
         end
+        % Align spikes by negative peak & remove artifacts by amplitude
+        remove_artifacts = 1; % remove artifacts = 1, not remove = 0;
+        [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win, remove_artifacts,...
+            minPeakThrMultiplier,...
+            maxPeakThrMultiplier,...
+            posPeakThrMultiplier);
     end
-    % Align spikes by negative peak & remove artifacts by amplitude
-    remove_artifacts = 1; % remove artifacts = 1, not remove = 0;
-    [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win, remove_artifacts,...
-        minPeakThrMultiplier,...
-        maxPeakThrMultiplier,...
-        posPeakThrMultiplier);
+
 catch
     spikeTimes = [];
 end
