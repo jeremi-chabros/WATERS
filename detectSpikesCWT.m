@@ -1,7 +1,8 @@
 function [spikeTimes, spikeWaveforms, trace] = detectSpikesCWT(...
     data, fs, Wid, wname, L, Ns, multiplier, nSpikes, ttx, ...
     minPeakThrMultiplier, maxPeakThrMultiplier, posPeakThrMultiplier, ...
-    multiple_templates)
+    multiple_templates, multi_template_method, channelInfo, plot_folder, ...
+    run_detection_in_chunks, chunk_length)
 
 % Description:
 %
@@ -95,7 +96,7 @@ if strcmp(wname, 'mea') && ~ttx
     %   from nSpikes
     try
         [aveWaveform, ~] = getTemplate(trace, multiplier, refPeriod, fs, nSpikes, ...
-            multiple_templates);
+            multiple_templates, multi_template_method, channelInfo, plot_folder);
         % TODO: may be better to specify why things failed (eg. threshold
         % too high and so no spikes detected with threshold?)
     catch
@@ -143,17 +144,21 @@ try
             wavelet_name = strcat('mea', num2str(waveform_idx));
             % Detect spikes with wavelet method
             % Note: Runs in 60-second chunks
-            j=1;
-            spikeTimes = [];
-            for segment = 1:round(length(trace)/fs/60)
-                if j+(60*fs)<=length(trace)
-                    spikeVec = j + detectSpikesWavelet(trace(j:j+(60*fs)), fs/1000, Wid, Ns, 'l', L, wavelet_name, 0, 0);
-                else
-                    spikeVec = j + detectSpikesWavelet(trace(j:end), fs/1000, Wid, Ns, 'l', L, wavelet_name, 0, 0);
+            if run_detection_in_chunks
+                j=1;
+                spikeTimes = [];
+                for segment = 1:round(length(trace)/fs/chunk_length)
+                    if j+(chunk_length*fs)<=length(trace)
+                        spikeVec = j + detectSpikesWavelet(trace(j:j+(chunk_length*fs)), fs/1000, Wid, Ns, 'l', L, wavelet_name, 0, 0);
+                    else
+                        spikeVec = j + detectSpikesWavelet(trace(j:end), fs/1000, Wid, Ns, 'l', L, wavelet_name, 0, 0);
+                    end
+                    spikeTimes = horzcat(spikeTimes, spikeVec);
+                    j = j+(chunk_length*fs);
                 end
-                spikeTimes = horzcat(spikeTimes, spikeVec);
-                j = j+(60*fs);
-            end
+            else
+                spikeTimes = detectSpikesWavelet(trace, fs/1000, Wid, Ns, 'l', L, wavelet_name, 0, 0);
+            end 
             % Align spikes by negative peak & remove artifacts by amplitude
             remove_artifacts = 1; % remove artifacts = 1, not remove = 0;
             [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win, remove_artifacts,...

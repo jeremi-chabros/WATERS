@@ -55,8 +55,21 @@ maxPeakThrMultiplier = params.maxPeakThrMultiplier;
 posPeakThrMultiplier = params.posPeakThrMultiplier;
 unit = params.unit;
 
+% Setting some defaults
 if ~isfield(params, 'multiple_templates')
     params.multiple_templates = 0;
+end 
+
+if ~isfield(params, 'multi_template_method')
+    params.multi_template_method = 'PCA';
+end 
+
+if ~isfield(params, 'run_detection_in_chunks')
+    params.run_detection_in_chunks = 1;
+end 
+
+if ~isfield(params, 'chunk_length')
+    params.chunk_length = 60;
 end 
 
 
@@ -143,12 +156,15 @@ for recording = 1:numel(files)
                     spikeWaves = [];
                     spikeFrames = [];
                     if ~(ismember(channel, grd))
-                        
+                        channelInfo.channel = channel;
+                        channelInfo.fileName = fileName;
                         [spikeFrames, spikeWaves, ~] = ...
                             detectSpikesCWT(trace,fs,wid,actual_wname,L,nScales, ...
                             multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
                             maxPeakThrMultiplier, posPeakThrMultiplier, ...
-                            params.multiple_templates);
+                            params.multiple_templates, params.multi_template_method, ...
+                            channelInfo, params.plot_folder, params.run_detection_in_chunks, ...
+                            params.chunk_length);
                         
                         if iscell(spikeFrames)
                             

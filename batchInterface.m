@@ -56,13 +56,18 @@ params.wnameList = {'mea','bior1.5'}';
 params.costList = -0.3;
 params.thresholds = {'2.5', '2.5'};
 params.subsample_time = [1, 60];
+params.run_detection_in_chunks = 0; % whether to run wavelet detection in chunks (0: no, 1:yes)
+params.chunk_length = 60;  % in seconds
 
 % adding HDBSCAN path (please specify your own path to HDBSCAN)
 addpath(genpath('/home/timsit/HDBSCAN/'));
 
 params.multiple_templates = 1; % whether to get multiple templates to adapt
+params.multi_template_method = 'PCA';  % options are PCA or spikeWidthAndAmplitude
 % Set the number of spikes used to make the template (!)
-params.nSpikes = 1000;
+params.nSpikes = 10000;
+params.plot_folder = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/results/plots';
+
 
 batchDetectSpikes(dataPath, savePath, option, files, params);
 
