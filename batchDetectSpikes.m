@@ -85,7 +85,18 @@ end
 thresholds = params.thresholds;
 thrList = strcat( 'thr', thresholds);
 thrList = strrep(thrList, '.', 'p')';
+
+% 2021-06-07: adding absolute thresholds 
+if isfield(params, 'absThresholds')
+    absThresholds = params.absThresholds;
+    absThrList = strcat('absthr', absThresholds);
+    absThrList = strrep(absThrList, '.', 'p')';
+
 wnameList = horzcat(wnameList, thrList);
+
+if isfield(params, 'absThresholds')
+    wnameList = horzcat(wnameList, absThrList);
+end 
 
 progressbar('File', 'Electrode');
 

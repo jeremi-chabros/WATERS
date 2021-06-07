@@ -135,6 +135,12 @@ try
         multiplier = str2num(multiplier);
         [spikeTrain, ~, ~] = detectSpikesThreshold(trace, multiplier, 0.2, fs, 0);
         spikeTimes = find(spikeTrain == 1);
+    elseif startsWith(wname, 'absthr')
+        absThreshold = strrep(wname, 'p', '.');
+        absThreshold = strrep(absThreshold, 'thr', '');
+        absThreshold = str2num(absThreshold);
+        [spikeTrain, ~, ~] = detectSpikesThreshold(trace, 0, 0.2, fs, 0, absThreshold);
+        spikeTimes = find(spikeTrain == 1);
     elseif startsWith(wname, 'mea') && multiple_templates
         
         mult_template_spike_times = {};

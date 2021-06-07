@@ -1,5 +1,5 @@
 function [spikeTrain, filtTrace, threshold] = ...
-    detectSpikesThreshold(trace, multiplier, refPeriod, fs, filterFlag)
+    detectSpikesThreshold(trace, multiplier, refPeriod, fs, filterFlag, absoluteThreshold)
 
 % Description:
 %   Threshold-based spike detection
@@ -11,6 +11,8 @@ function [spikeTrain, filtTrace, threshold] = ...
 %                       no spikes will be detected
 %   fs: [scalar] sampling frequency in [Hz]
 %   filterFlag: specifies whether to filter the trace (1); (0) otherwise
+%   absoluteThreshold : [scalar] absolute threshold, and if provided
+%   ignores the multiplier argument
 
 % OUTPUT:
 %   spikeTrain - [n x 1] binary vector, where 1 represents a spike
@@ -34,9 +36,12 @@ end
 
 % Calculate the threshold (median absolute deviation)
 % See: https://en.wikipedia.org/wiki/Median_absolute_deviation
-s = median(abs(trace-mean(trace)))/0.6745;     % Faster than mad(X,1);
-m = median(trace);                % Note: filtered trace is already zero-mean
-threshold = m - multiplier*s;
+if exist(absoluteThreshold, 'var')
+    threshold = absoluteThreshold;
+else
+    s = median(abs(trace-mean(trace)))/0.6745;     % Faster than mad(X,1);
+    m = median(trace);                % Note: filtered trace is already zero-mean
+    threshold = m - multiplier*s;
 
 % Detect spikes (defined as threshold crossings)
 spikeTrain = zeros(size(trace));
