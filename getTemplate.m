@@ -49,8 +49,6 @@ if ~exist('channelInfo', 'var')
 end 
     
 
-
-
 [spikeTrain, ~, ~] = detectSpikesThreshold(trace, multiplier, refPeriod, fs, 0);
 spikeTimes = find(spikeTrain == 1);
 [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, spike_window, remove_artifact);
