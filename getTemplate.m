@@ -108,6 +108,38 @@ else
         end 
         
         reduced_X = [spike_amplitude spike_widths];
+    
+    elseif strcmp(multi_template_method, 'amplitudeAndWidthAndSymmetry')
+        
+        % spike_amplitude = min(spikeWaveforms, [], 2);
+        num_spikes = size(spikeWaveforms, 1);
+        peak_x = 25; % hard-coded for now, due to alignPeaks
+        spike_amplitude = spikeWaveforms(:, peak_x);
+        spike_widths = zeros(num_spikes, 1);
+        spike_symmetry = zeros(num_spikes, 1);
+        
+        for spike_idx = 1:size(spikeWaveforms)
+            spike_wave = spikeWaveforms(spike_idx, :);
+            
+            half_peak_y = spike_amplitude(spike_idx) / 2;
+            cross_half_peak_x = find(spike_wave > half_peak_y);
+            
+            % Find latest time of crossing half_peak_y before peak 
+            % And find earliest time of crossing half_peak_y after peak
+            half_peak_x1 = max(cross_half_peak_x(cross_half_peak_x < peak_x));
+            half_peak_x2 = min(cross_half_peak_x(cross_half_peak_x > peak_x));
+            spike_widths(spike_idx) = (half_peak_x2 - half_peak_x1) / fs;
+            
+            spike_first_half = spike_wave(1:peak_x-1);
+            spike_second_half_flipped = fliplr(spike_wave(peak_x+1:end-2));
+            % higher value means less symmetric, 0 means perfectly
+            % symmetric (no difference between first half and second half
+            % reversed
+            spike_symmetry(spike_idx) = sum(abs(spike_first_half - spike_second_half_flipped));
+            
+        end 
+        
+        reduced_X = [spike_amplitude spike_widths spike_symmetry];
         
         
     else
