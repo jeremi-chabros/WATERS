@@ -38,44 +38,54 @@ clearvars; clc;
 % dataPath = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/';
 % savePath = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/results/';
 
-dataPath = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/spring-summer-2021-Rachael-troubleshoot/';
-savePath = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/spring-summer-2021-Rachael-troubleshoot/results';
+% dataPath = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/spring-summer-2021-Rachael-troubleshoot/';
+% savePath = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/spring-summer-2021-Rachael-troubleshoot/results';
 
+dataPath = '/media/timsit/T7/test-detection/';
+savePath = '/media/timsit/T7/test-detection/results/';
 
 addpath(dataPath)
 
 option = 'list';
-files = { ... 
-  '181210_orgaonid_slice50001.mat';
-% 'Organoid 180518 slice 7 old MEA 3D stim recording 2.mat'};
+% files = { ... 
+  % '181210_orgaonid_slice50001.mat';
+%    'Organoid 180518 slice 7 old MEA 3D stim recording 2.mat'};
 % , ...     
 % 'Organoid 180518 slice 7 old MEA 3D stim recording 3.mat'};
 
-% files = {
-%     '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/Organoid 180518 slice 7 old MEA 3D stim recording 3.mat',
- %    '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/Organoid 180518 slice 7 old MEA 3D stim recording 2.mat', ...
+files = { ...
+     'Organoid 180518 slice 7 old MEA 3D stim recording 3.mat', ...
+    %  '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/Organoid 180518 slice 7 old MEA 3D stim recording 2.mat', ...
 };
 
 load params
 params.wnameList = {'mea','bior1.5'}';
 params.costList = -0.3;
-params.thresholds = {'2.5', '2.5'};
+params.thresholds = {'2.5', '2.5'}; % the need of horzcat here is not good.
+params.threshold_calculation_window = [0, 0.4];
 % params.absThresholds = {''};  % add absolute thresholds here
 params.subsample_time = [1, 60];
 params.run_detection_in_chunks = 0; % whether to run wavelet detection in chunks (0: no, 1:yes)
 params.chunk_length = 60;  % in seconds
+params.multiplier = 3; % multiplier to use for extracting spikes for wavelet (not for detection)
 
 % adding HDBSCAN path (please specify your own path to HDBSCAN)
 addpath(genpath('/home/timsit/HDBSCAN/'));
 
-params.nSpikes = 10000;
+params.custom_threshold_file = load(fullfile(dataPath, 'results', ...
+'Organoid 180518 slice 7 old MEA 3D stim recording 3 fake ttx_L_-0.3_spikes.mat'));
 
-params.multiple_templates = 1; % whether to get multiple templates to adapt (1: yes, 0: no)
+params.custom_threshold_method_name = 'thr2p5';
+
+
+params.nSpikes = 10000;
+params.multiple_templates = 0; % whether to get multiple templates to adapt (1: yes, 0: no)
 params.multi_template_method = 'PCA';  % options are PCA or spikeWidthAndAmplitude
 % Set the number of spikes used to make the template (!)
 
 % params.plot_folder = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/results/plots';
-params.plot_folder = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/spring-summer-2021-Rachael-troubleshoot/results/plots/';
+% params.plot_folder = '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/spring-summer-2021-Rachael-troubleshoot/results/plots/';
+
 
 batchDetectSpikes(dataPath, savePath, option, files, params);
 

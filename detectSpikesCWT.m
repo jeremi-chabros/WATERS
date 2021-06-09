@@ -1,8 +1,8 @@
-function [spikeTimes, spikeWaveforms, trace] = detectSpikesCWT(...
+function [spikeTimes, spikeWaveforms, trace, threshold] = detectSpikesCWT(...
     data, fs, Wid, wname, L, Ns, multiplier, nSpikes, ttx, ...
     minPeakThrMultiplier, maxPeakThrMultiplier, posPeakThrMultiplier, ...
     multiple_templates, multi_template_method, channelInfo, plot_folder, ...
-    run_detection_in_chunks, chunk_length)
+    run_detection_in_chunks, chunk_length, threshold_calculation_window, absThreshold)
 
 % Description:
 %
@@ -90,6 +90,13 @@ end
 
 win = 10;   % [frames]
 
+% Setting this to zero by default
+threshold = nan;
+
+if ~exist('absThreshold', 'var')
+    absThreshold = nan;
+end 
+
 if strcmp(wname, 'mea') && ~ttx
     
     %   Use threshold-based spike detection to obtain the median waveform
@@ -105,12 +112,16 @@ if strcmp(wname, 'mea') && ~ttx
     
     if multiple_templates
         
-        num_ave_waveform = size(aveWaveform, 2);
-        
-        for waveform_idx = 1:num_ave_waveform 
-            wavelet_name = strcat('mea', num2str(waveform_idx));
-            waveform = aveWaveform(:, waveform_idx);
-            adaptWavelet(waveform, wavelet_name);
+        if ~exist('aveWaveform', 'var')
+            warning('Cannot get average waveform, likely multiplier too high');
+        else 
+            num_ave_waveform = size(aveWaveform, 2);
+
+            for waveform_idx = 1:num_ave_waveform 
+                wavelet_name = strcat('mea', num2str(waveform_idx));
+                waveform = aveWaveform(:, waveform_idx);
+                adaptWavelet(waveform, wavelet_name);
+            end 
         end 
         
     else
@@ -127,20 +138,31 @@ end
 try
     spikeWaveforms = [];
     spikeTimes = [];
-    
+    % Some defaults set by Jeremi:
+    refPeriod = 0.2;
+    filterFlag = 0;
     % Detect spikes with threshold method
     if startsWith(wname, 'thr')
         multiplier = strrep(wname, 'p', '.');
         multiplier = strrep(multiplier, 'thr', '');
         multiplier = str2num(multiplier);
-        [spikeTrain, ~, ~] = detectSpikesThreshold(trace, multiplier, 0.2, fs, 0);
-        spikeTimes = find(spikeTrain == 1);
+        absoluteThreshold = nan;
+        [spikeTrain, ~, threshold] = detectSpikesThreshold(trace, multiplier, ... 
+            refPeriod, fs, filterFlag, absoluteThreshold, threshold_calculation_window);
+        spikeTimes = find(spikeTrain == 1);  % (this is actually spike frames...)
     elseif startsWith(wname, 'absthr')
         absThreshold = strrep(wname, 'p', '.');
         absThreshold = strrep(absThreshold, 'thr', '');
         absThreshold = str2num(absThreshold);
-        [spikeTrain, ~, ~] = detectSpikesThreshold(trace, 0, 0.2, fs, 0, absThreshold);
+        [spikeTrain, ~, ~] = detectSpikesThreshold(trace, 0, refPeriod, fs, 0, absThreshold, threshold_calculation_window);
         spikeTimes = find(spikeTrain == 1);
+        threshold = absThreshold;
+    elseif startsWith(wname, 'customAbsThr')
+        multiplier = 0;
+        [spikeTrain, ~, ~] = detectSpikesThreshold(trace, multiplier, ...
+            refPeriod, fs, filterFlag, absThreshold, threshold_calculation_window);
+        spikeTimes = find(spikeTrain == 1);
+        threshold = absThreshold;
     elseif startsWith(wname, 'mea') && multiple_templates
         
         mult_template_spike_times = {};
@@ -203,6 +225,7 @@ try
     end
 
 catch
+    fprintf('Spike detection failed for some reason...\n')
     spikeTimes = [];
 end
 end

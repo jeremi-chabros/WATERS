@@ -72,6 +72,18 @@ if ~isfield(params, 'chunk_length')
     params.chunk_length = 60;
 end 
 
+if ~isfield(params, 'threshold_calculation_window')
+    threshold_calculation_window = [0, 1];
+else
+    threshold_calculation_window = params.threshold_calculation_window;
+end 
+
+if ~isfield(params, 'plot_folder')
+    plot_folder = ''; % won't save plot
+else 
+    plot_folder = params.plot_folder;
+end 
+
 
 %%
 % Get files
@@ -86,17 +98,36 @@ thresholds = params.thresholds;
 thrList = strcat( 'thr', thresholds);
 thrList = strrep(thrList, '.', 'p')';
 
+
 % 2021-06-07: adding absolute thresholds 
 if isfield(params, 'absThresholds')
     absThresholds = params.absThresholds;
     absThrList = strcat('absthr', absThresholds);
     absThrList = strrep(absThrList, '.', 'p')';
-
-wnameList = horzcat(wnameList, thrList);
-
-if isfield(params, 'absThresholds')
-    wnameList = horzcat(wnameList, absThrList);
+    
 end 
+
+% TODO: work in progress
+% if isfield(params, 'absThresholds')
+%     wnameList = horzcat(wnameList, absThrList);
+% end 
+
+% Note that this adds a new dimensions, you should get Nx2 cell array
+% 2021-06-09: TS: but why not just do vertcat???
+% wnameList = horzcat(wnameList, thrList);
+wnameList = vertcat(wnameList, thrList);
+
+% check if custom threshold file is provided
+if isfield(params, 'custom_threshold_file')
+    customAbsThrPerChannel = params.custom_threshold_file.thresholds;
+    custom_threshold_method_name = params.custom_threshold_method_name;
+else
+    customAbsThrPerChannel = nan;
+    custom_threshold_method_name = nan;
+end 
+
+wnameList = vertcat(wnameList, {'customAbsThr'});
+
 
 progressbar('File', 'Electrode');
 
@@ -148,6 +179,7 @@ for recording = 1:numel(files)
             spikeWaveforms = cell(1,60);
             mad = zeros(1,60);
             variance = zeros(1,60);
+            absThreshold = zeros(1, 60);
             
             % Run spike detection
             for channel = 1:length(channels)
@@ -169,13 +201,24 @@ for recording = 1:numel(files)
                     if ~(ismember(channel, grd))
                         channelInfo.channel = channel;
                         channelInfo.fileName = fileName;
-                        [spikeFrames, spikeWaves, ~] = ...
+                        
+                        
+                        if iscell(customAbsThrPerChannel)
+                            customAbsThr = customAbsThrPerChannel{channel}.(custom_threshold_method_name);
+                        else
+                            customAbsThr = nan;
+                        end 
+                        
+                        
+                        [spikeFrames, spikeWaves, ~, threshold] = ...
                             detectSpikesCWT(trace,fs,wid,actual_wname,L,nScales, ...
                             multiplier,nSpikes,ttx, minPeakThrMultiplier, ...
                             maxPeakThrMultiplier, posPeakThrMultiplier, ...
                             params.multiple_templates, params.multi_template_method, ...
-                            channelInfo, params.plot_folder, params.run_detection_in_chunks, ...
-                            params.chunk_length);
+                            channelInfo, plot_folder, params.run_detection_in_chunks, ...
+                            params.chunk_length, threshold_calculation_window, customAbsThr);
+                        
+                        thresholdStruct.(valid_wname) = threshold;
                         
                         if iscell(spikeFrames)
                             
@@ -208,12 +251,26 @@ for recording = 1:numel(files)
                     else
                         waveStruct.(valid_wname) = [];
                         spikeStruct.(valid_wname) = [];
+                        thresholds.(valid_wname) = [];
                     end
                 end
                 
+                thresholds{channel} = thresholdStruct;
                 spikeTimes{channel} = spikeStruct;
                 spikeWaveforms{channel} = waveStruct;
-                mad(channel) = median(trace)-median(abs(trace - mean(trace))) / 0.6745;
+                
+                % 2021-06-08 I think this is not actually the mad...
+                % mad(channel) = median(trace) - median(abs(trace - mean(trace))) / 0.6745;
+                
+                % also taking the median of the mean is a  bit weird... 
+                % I think mean of mean or mean of median is more
+                % sensible...
+                s = median(abs(trace - mean(trace))) / 0.6745;
+                mad(channel) = s;
+                % s = median(abs(trace-mean(trace)))/0.6745;     % Faster than mad(X,1);
+                m = median(trace);                % Note: filtered trace is already zero-mean
+                absThreshold = m - multiplier*s;
+                
                 variance(channel) = var(trace);
                 
             end
@@ -228,6 +285,7 @@ for recording = 1:numel(files)
             params.fs = fs;
             params.variance = variance;
             params.mad = mad;
+            params.absThreshold = absThreshold;
             
             spikeDetectionResult = struct();
             spikeDetectionResult.method = 'CWT';
@@ -237,7 +295,7 @@ for recording = 1:numel(files)
             disp(['Saving results to: ' saveName]);
             
             varsList = {'spikeTimes', 'channels', 'spikeDetectionResult', ...
-                'spikeWaveforms'};
+                'spikeWaveforms', 'thresholds'};
             save(saveName, varsList{:}, '-v7.3');
         end
     end
