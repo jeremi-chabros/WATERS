@@ -61,21 +61,21 @@ files = { ...
 load params
 params.wnameList = {'mea','bior1.5'}';
 params.costList = -0.3;
-params.thresholds = {'2.5'}; % the need of horzcat here is not good.
+params.thresholds = {'2.5', '3.5', '4.5'}; % the need of horzcat here is not good.
 params.threshold_calculation_window = [0, 0.4];
 % params.absThresholds = {''};  % add absolute thresholds here
 params.subsample_time = [1, 60];
 params.run_detection_in_chunks = 0; % whether to run wavelet detection in chunks (0: no, 1:yes)
 params.chunk_length = 60;  % in seconds
-params.multiplier = 3; % multiplier to use for extracting spikes for wavelet (not for detection)
+params.multiplier = 3; % multiplier to use  extracting spikes for wavelet (not for detection)
 
 % adding HDBSCAN path (please specify your own path to HDBSCAN)
 addpath(genpath('/home/timsit/HDBSCAN/'));
 
 params.custom_threshold_file = load(fullfile(dataPath, 'results', ...
-'Organoid 180518 slice 7 old MEA 3D stim recording 3 fake ttx_L_-0.3_spikes.mat'));
+'Organoid 180518 slice 7 old MEA 3D stim recording 3_L_-0.3_spikes_threshold_ref.mat'));
 
-params.custom_threshold_method_name = 'thr2p5';
+params.custom_threshold_method_name = {'thr2p5', 'thr3p5', 'thr4p5'};
 
 
 params.nSpikes = 10000;

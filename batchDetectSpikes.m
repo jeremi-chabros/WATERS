@@ -119,14 +119,19 @@ wnameList = vertcat(wnameList, thrList);
 
 % check if custom threshold file is provided
 if isfield(params, 'custom_threshold_file')
-    customAbsThrPerChannel = params.custom_threshold_file.thresholds;
+    % params.custom_threshold_file.thresholds;
     custom_threshold_method_name = params.custom_threshold_method_name;
+    for n_custom_threshold_method = 1:length(custom_threshold_method_name)
+        custom_name = strcat('customAbs', custom_threshold_method_name{n_custom_threshold_method});
+        wnameList = vertcat(wnameList, {custom_name});
+    end 
+    customAbsThrPerChannel = params.custom_threshold_file.thresholds;
 else
     customAbsThrPerChannel = nan;
     custom_threshold_method_name = nan;
 end 
 
-wnameList = vertcat(wnameList, {'customAbsThr'});
+% wnameList = vertcat(wnameList, {'customAbsThr'});
 
 
 progressbar('File', 'Electrode');
@@ -203,8 +208,8 @@ for recording = 1:numel(files)
                         channelInfo.fileName = fileName;
                         
                         
-                        if iscell(customAbsThrPerChannel)
-                            customAbsThr = customAbsThrPerChannel{channel}.(custom_threshold_method_name);
+                        if contains(wname, 'customAbs')
+                            customAbsThr = customAbsThrPerChannel{channel}.(erase(wname, 'customAbs'));
                         else
                             customAbsThr = nan;
                         end 

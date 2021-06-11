@@ -157,7 +157,7 @@ try
         [spikeTrain, ~, ~] = detectSpikesThreshold(trace, 0, refPeriod, fs, 0, absThreshold, threshold_calculation_window);
         spikeTimes = find(spikeTrain == 1);
         threshold = absThreshold;
-    elseif startsWith(wname, 'customAbsThr')
+    elseif startsWith(wname, 'customAbs')
         multiplier = 0;
         [spikeTrain, ~, ~] = detectSpikesThreshold(trace, multiplier, ...
             refPeriod, fs, filterFlag, absThreshold, threshold_calculation_window);
