@@ -150,6 +150,14 @@ try
         [spikeTrain, ~, threshold] = detectSpikesThreshold(trace, multiplier, ... 
             refPeriod, fs, filterFlag, absoluteThreshold, threshold_calculation_window);
         spikeTimes = find(spikeTrain == 1);  % (this is actually spike frames...)
+        
+        % Align spikes by negative peak & remove artifacts by amplitude
+        remove_artifacts = 1; % remove artifacts = 1, not remove = 0;
+        [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win, remove_artifacts,...
+            minPeakThrMultiplier,...
+            maxPeakThrMultiplier,...
+            posPeakThrMultiplier);
+        
     elseif startsWith(wname, 'absthr')
         absThreshold = strrep(wname, 'p', '.');
         absThreshold = strrep(absThreshold, 'thr', '');
@@ -163,6 +171,15 @@ try
             refPeriod, fs, filterFlag, absThreshold, threshold_calculation_window);
         spikeTimes = find(spikeTrain == 1);
         threshold = absThreshold;
+        
+        % Align spikes by negative peak & remove artifacts by amplitude
+        remove_artifacts = 1; % remove artifacts = 1, not remove = 0;
+        [spikeTimes, spikeWaveforms] = alignPeaks(spikeTimes, trace, win, remove_artifacts,...
+            minPeakThrMultiplier,...
+            maxPeakThrMultiplier,...
+            posPeakThrMultiplier);
+        
+        
     elseif startsWith(wname, 'mea') && multiple_templates
         
         mult_template_spike_times = {};

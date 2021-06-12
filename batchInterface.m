@@ -49,7 +49,7 @@ addpath(dataPath)
 option = 'list';
 % files = { ... 
   % '181210_orgaonid_slice50001.mat';
-%    'Organoid 180518 slice 7 old MEA 3D stim recording 2.mat'};
+%    'Organoid  180518 slice 7 old MEA 3D stim recording 2.mat'};
 % , ...     
 % 'Organoid 180518 slice 7 old MEA 3D stim recording 3.mat'};
 
@@ -88,6 +88,12 @@ params.multi_template_method = 'amplitudeAndWidthAndSymmetry';  % options are PC
 
 
 batchDetectSpikes(dataPath, savePath, option, files, params);
+
+
+%% Plot summary of detection results 
+savePath = '/media/timsit/T7/test-detection/results/';
+plotDetectionResults(savePath, savePath);
+
 
 
 
