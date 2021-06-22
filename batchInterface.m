@@ -76,7 +76,9 @@ params.custom_threshold_file = load(fullfile(dataPath, 'results', ...
 'Organoid 180518 slice 7 old MEA 3D stim recording 3_L_-0.3_spikes_threshold_ref.mat'));
 
 params.custom_threshold_method_name = {'thr2p5', 'thr3p5', 'thr4p5'};
-
+params.minPeakThrMultiplier = -5;
+params.maxPeakThrMultiplier = -100;
+params.posPeakThrMultiplier = 15;
 
 params.nSpikes = 10000;
 params.multiple_templates = 1; % whether to get multiple templates to adapt (1: yes, 0: no)
