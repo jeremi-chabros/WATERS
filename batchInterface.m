@@ -54,26 +54,27 @@ option = 'list';
 % 'Organoid 180518 slice 7 old MEA 3D stim recording 3.mat'};
 
 files = { ...
-     'Organoid 180518 slice 7 old MEA 3D stim recording 3.mat', ...
+     '2000803_slice3_6.mat', ...
+     '2000803_slice3_7_TTX.mat'
     %  '/media/timsit/Seagate Expansion Drive/The_Organoid_Project/data/all_mat_files/test-detection/Organoid 180518 slice 7 old MEA 3D stim recording 2.mat', ...
 };
 
 load params
-params.wnameList = {'mea','bior1.5'}';
-params.costList = -0.3;
+params.wnameList = {'bior1.5', 'db2'}';  % {'mea','bior1.5'}'; (note the transpose) 
+params.costList = [-0.3, -0.2, -0.1, 0];
 params.thresholds = {'2.5', '3.5', '4.5'}; % the need of horzcat here is not good.
-params.threshold_calculation_window = [0, 0.4];
+params.threshold_calculation_window = [0, 1.0];  % which part of the recording to do spike detection, 0 = start of recording, 0.5 = midway, 1 = end of recording
 % params.absThresholds = {''};  % add absolute thresholds here
 params.subsample_time = [1, 60];
 params.run_detection_in_chunks = 0; % whether to run wavelet detection in chunks (0: no, 1:yes)
-params.chunk_length = 60;  % in seconds
+params.chunk_length = 60;  % in seconds, will be ignored if run_detection_in_chunks = 0
 params.multiplier = 3; % multiplier to use  extracting spikes for wavelet (not for detection)
 
 % adding HDBSCAN path (please specify your own path to HDBSCAN)
 addpath(genpath('/home/timsit/HDBSCAN/'));
 
-params.custom_threshold_file = load(fullfile(dataPath, 'results', ...
-'Organoid 180518 slice 7 old MEA 3D stim recording 3_L_-0.3_spikes_threshold_ref.mat'));
+% params.custom_threshold_file = load(fullfile(dataPath, 'results', ...
+% 'Organoid 180518 slice 7 old MEA 3D stim recording 3_L_-0.3_spikes_threshold_ref.mat'));
 
 params.custom_threshold_method_name = {'thr2p5', 'thr3p5', 'thr4p5'};
 params.minPeakThrMultiplier = -5;
