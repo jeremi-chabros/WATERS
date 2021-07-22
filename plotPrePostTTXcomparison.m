@@ -1,7 +1,9 @@
 spikeDetectionResultDirName = '/media/timsit/T7/test-detection/results/';
 plotFolder = '/media/timsit/T7/test-detection/results/plots/prePostTTX/';
 
-pre_post_TTX_pairs = {'2000803_slice3_6', '2000803_slice3_7_TTX'}; % N x 2 cell array, where N is the number of pre-post pairs 
+% pre_post_TTX_pairs = {'2000803_slice3_6', '2000803_slice3_7_TTX'}; % N x 2 cell array, where N is the number of pre-post pairs 
+% pre_post_TTX_pairs = {'191210_FTD_slice5_DIV_g07_2019_pre_ttx', '191210_FTD_slice5_DIV_g07_2019_ttx'};
+pre_post_TTX_pairs = {'200114_FTDOrg_GrpB_1B_Slice3_pre_TTX', '200114_FTDOrg_GrpB_1B_Slice3_TTX'};
 spike_features_to_extract = {'spikeWidth', 'spikeAmplitude'};
 
 
@@ -26,7 +28,7 @@ for pair_number = 1:size(pre_post_TTX_pairs, 1)
         pre_TTX_param_file = pre_TTX_detection_files{pre_TTX_param_file_idx};
         file_components = split(pre_TTX_param_file, '_');
         % TODO: this part is very hacky, perhaps do split of 'L_' ?
-        cost_param_cell_array = file_components(5);
+        cost_param_cell_array = file_components(end-1);
         pre_TTX_L_param = str2num(cost_param_cell_array{1});
         pre_TTX_param_data = load(fullfile(spikeDetectionResultDirName, pre_TTX_param_file));
         
@@ -60,7 +62,7 @@ for pair_number = 1:size(pre_post_TTX_pairs, 1)
         post_TTX_param_file = post_TTX_detection_files{post_TTX_param_file_idx};
         file_components = split(post_TTX_param_file, '_');
         % TODO: this part is very hacky, perhaps do split of 'L_' ?
-        cost_param_cell_array = file_components(5);
+        cost_param_cell_array = file_components(end-1);
         post_TTX_L_param = str2num(cost_param_cell_array{1});
         post_TTX_param_data = load(fullfile(spikeDetectionResultDirName, post_TTX_param_file));
         
@@ -95,7 +97,7 @@ end
 
 %% Compare spikes pre-post TTX per electrode, and spike characteristics
 
-wnames_to_plot = {'bior1p5'};
+wnames_to_plot = {'db2'};  % bior1p5 or db2
 
 % currently only does spike width vs. amplitude, will generalized to more
 % things...
@@ -135,12 +137,13 @@ for wname_index = 1:length(wnames_to_plot)
         xlim([min_spike_rate, max_spike_rate]); 
         ylim([min_spike_rate,  max_spike_rate]);
         
-
+        set(gcf, 'PaperPosition', [0.25, 0.25, 10, 10])
         set(gcf, 'color', 'white')
         print(gcf, fullfile(plotFolder, strcat(wname, '_L_', L_str, 'pre_post_TTX_spikes', '.png')), '-dpng','-r300')
         close(gcf)
         
         % SPIKE PROPERTIES 
+        % TODO: plot histogram for each of the stats
         figure;
         
         pre_TTX_all_electrode_spike_amplitude = vertcat(pre_TTX_info.preTTX_spikeAmplitude{:});
@@ -149,13 +152,129 @@ for wname_index = 1:length(wnames_to_plot)
         post_TTX_all_electrode_spike_width = vertcat(post_TTX_info.postTTX_spikeWidth{:});
         scatter(pre_TTX_all_electrode_spike_amplitude, pre_TTX_all_electrode_spike_width, 'r');
         hold on 
-        scatter(pre_TTX_all_electrode_spike_amplitude, pre_TTX_all_electrode_spike_width, 'k');
-        
+        scatter(post_TTX_all_electrode_spike_amplitude, post_TTX_all_electrode_spike_width, 'k');
+        legend('Pre-TTX', 'Post-TTX')
         xlabel('Spike amplitude');
         ylabel('Spike width');
         set(gcf, 'color', 'white')
+        set(gcf, 'PaperPosition', [0.25, 0.25, 10, 10])
         print(gcf, fullfile(plotFolder, strcat(wname, '_L_', L_str, 'pre_post_TTX_spikeProperties', '.png')), '-dpng','-r300')
         close(gcf)
+        
+        figure;
+        subplot(3, 3, [4, 5, 7, 8])
+        pre_TTX_all_electrode_spike_amplitude = vertcat(pre_TTX_info.preTTX_spikeAmplitude{:});
+        pre_TTX_all_electrode_spike_width = vertcat(pre_TTX_info.preTTX_spikeWidth{:});
+        post_TTX_all_electrode_spike_amplitude = vertcat(post_TTX_info.postTTX_spikeAmplitude{:});
+        post_TTX_all_electrode_spike_width = vertcat(post_TTX_info.postTTX_spikeWidth{:});
+        scatter(pre_TTX_all_electrode_spike_amplitude, pre_TTX_all_electrode_spike_width, 'r');
+        hold on 
+        scatter(post_TTX_all_electrode_spike_amplitude, post_TTX_all_electrode_spike_width, 'k');
+        legend('Pre-TTX', 'Post-TTX')
+        xlabel('Spike amplitude');
+        ylabel('Spike width');
+        set(gcf, 'color', 'white')
+        set(gcf, 'PaperPosition', [0.25, 0.25, 13, 13])
+        hold on 
+        % include histogram 
+        subplot(3, 3, [1, 2])
+        min_spike_amp = min([min(pre_TTX_all_electrode_spike_amplitude), ...
+                             min(post_TTX_all_electrode_spike_amplitude), ...
+                            ]);
+        max_spike_amp = max([max(pre_TTX_all_electrode_spike_amplitude), ...
+                             max(post_TTX_all_electrode_spike_amplitude), ...
+                            ]);
+                        
+            
+        amp_edges = linspace(min_spike_amp, max_spike_amp, 50);
+        [pre_ttx_spike_amp_counts, edges] = histcounts(pre_TTX_all_electrode_spike_amplitude, amp_edges, 'Normalization', 'pdf');
+        [post_ttx_spike_amp_counts, edges] = histcounts(post_TTX_all_electrode_spike_amplitude, amp_edges, 'Normalization', 'pdf');
+        plot(amp_edges(2:end), pre_ttx_spike_amp_counts, 'color', 'r', 'linewidth', 2);
+        hold on
+        plot(amp_edges(2:end), post_ttx_spike_amp_counts, 'color', 'k', 'linewidth', 2);
+        ylabel('Probability density')
+        
+        
+        subplot(3, 3, [6, 9])
+        
+        min_spike_width = min([min(pre_TTX_all_electrode_spike_width), ...
+                             min(post_TTX_all_electrode_spike_width), ...
+                            ]);
+        max_spike_width = max([max(pre_TTX_all_electrode_spike_width), ...
+                             max(post_TTX_all_electrode_spike_width), ...
+                            ]);
+                        
+            
+        width_edges = linspace(min_spike_width, max_spike_width, 50);
+        [pre_ttx_spike_width_counts, edges] = histcounts(pre_TTX_all_electrode_spike_width, width_edges, 'Normalization', 'pdf');
+        [post_ttx_spike_width_counts, edges] = histcounts(post_TTX_all_electrode_spike_width, width_edges, 'Normalization', 'pdf');
+        plot(pre_ttx_spike_width_counts, width_edges(2:end), 'color', 'r', 'linewidth', 2);
+        hold on
+        plot(post_ttx_spike_width_counts, width_edges(2:end), 'color', 'k', 'linewidth', 2);
+        xlabel('Probability density')
+        
+        print(gcf, fullfile(plotFolder, strcat(wname, '_L_', L_str, 'pre_post_TTX_spikeProperties_w_histogram', '.png')), '-dpng','-r300')
+        close(gcf)
+        
+        %% Subset electrodes where pre-TTX > post-TTX
+        active_electrode_idx = find(pre_TTX_info.preTTXspikeRates > post_TTX_info.postTTXspikeRates);
+        
+        figure;
+        subplot(3, 3, [4, 5, 7, 8])
+        pre_TTX_all_electrode_spike_amplitude = vertcat(pre_TTX_info.preTTX_spikeAmplitude{active_electrode_idx});
+        pre_TTX_all_electrode_spike_width = vertcat(pre_TTX_info.preTTX_spikeWidth{active_electrode_idx});
+        post_TTX_all_electrode_spike_amplitude = vertcat(post_TTX_info.postTTX_spikeAmplitude{active_electrode_idx});
+        post_TTX_all_electrode_spike_width = vertcat(post_TTX_info.postTTX_spikeWidth{active_electrode_idx});
+        scatter(pre_TTX_all_electrode_spike_amplitude, pre_TTX_all_electrode_spike_width, 'r');
+        hold on 
+        scatter(post_TTX_all_electrode_spike_amplitude, post_TTX_all_electrode_spike_width, 'k');
+        legend('Pre-TTX', 'Post-TTX')
+        xlabel('Spike amplitude');
+        ylabel('Spike width');
+        title('Electrodes where pre-TTX > post-TTX spike rate')
+        set(gcf, 'color', 'white')
+        set(gcf, 'PaperPosition', [0.25, 0.25, 13, 13])
+        hold on 
+        % include histogram 
+        subplot(3, 3, [1, 2])
+        min_spike_amp = min([min(pre_TTX_all_electrode_spike_amplitude), ...
+                             min(post_TTX_all_electrode_spike_amplitude), ...
+                            ]);
+        max_spike_amp = max([max(pre_TTX_all_electrode_spike_amplitude), ...
+                             max(post_TTX_all_electrode_spike_amplitude), ...
+                            ]);
+                        
+            
+        amp_edges = linspace(min_spike_amp, max_spike_amp, 50);
+        [pre_ttx_spike_amp_counts, edges] = histcounts(pre_TTX_all_electrode_spike_amplitude, amp_edges, 'Normalization', 'pdf');
+        [post_ttx_spike_amp_counts, edges] = histcounts(post_TTX_all_electrode_spike_amplitude, amp_edges, 'Normalization', 'pdf');
+        plot(amp_edges(2:end), pre_ttx_spike_amp_counts, 'color', 'r', 'linewidth', 2);
+        hold on
+        plot(amp_edges(2:end), post_ttx_spike_amp_counts, 'color', 'k', 'linewidth', 2);
+        ylabel('Probability density')
+        
+        
+        subplot(3, 3, [6, 9])
+        
+        min_spike_width = min([min(pre_TTX_all_electrode_spike_width), ...
+                             min(post_TTX_all_electrode_spike_width), ...
+                            ]);
+        max_spike_width = max([max(pre_TTX_all_electrode_spike_width), ...
+                             max(post_TTX_all_electrode_spike_width), ...
+                            ]);
+                        
+            
+        width_edges = linspace(min_spike_width, max_spike_width, 50);
+        [pre_ttx_spike_width_counts, edges] = histcounts(pre_TTX_all_electrode_spike_width, width_edges, 'Normalization', 'pdf');
+        [post_ttx_spike_width_counts, edges] = histcounts(post_TTX_all_electrode_spike_width, width_edges, 'Normalization', 'pdf');
+        plot(pre_ttx_spike_width_counts, width_edges(2:end), 'color', 'r', 'linewidth', 2);
+        hold on
+        plot(post_ttx_spike_width_counts, width_edges(2:end), 'color', 'k', 'linewidth', 2);
+        xlabel('Probability density')
+        
+        print(gcf, fullfile(plotFolder, strcat(wname, '_L_', L_str, 'pre_post_TTX_spikeProperties_w_histogram_subset_active', '.png')), '-dpng','-r300')
+        close(gcf)
+        
         
     end 
     
