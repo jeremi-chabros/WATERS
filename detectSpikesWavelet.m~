@@ -61,14 +61,11 @@ function spikeFrames = detectSpikesWavelet(...
 %   University of Cambridge
 %   November 2020
 
-% TS 2021-05-03: Allowing for multiple mea templates 
-% also changed from switch/case to if/else for flexibility
-
 
 %admissible wavelet families (more wavelets could be added)
 wfam = {'bior1.5','bior1.3','sym2','db2','haar','mea'};
 
-if sum(contains(wname,wfam)) == 0  % orignally strcmp
+if sum(strcmp(wname,wfam)) == 0
     error('unknown wavelet family')
 elseif CmtFlg == 1
     disp(['wavelet family: ' wname])
@@ -240,7 +237,7 @@ if strcmp(wname_str, 'haar')
         for i = 1:Ns
             Scale(i) = Width(i)/dt - 1;
         end
-elseif strcmp(wname_str, 'db2')
+elseif strcmp(wname_str, 'db2'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
         for i = 1:length(Scales)
@@ -259,7 +256,7 @@ elseif strcmp(wname_str, 'db2')
         WidthTable = WidthTable + [1:length(Scales)] * Eps;
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
-elseif strcmp(wname_str, 'sym2')
+    case 'sym2'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
         for i = 1:length(Scales)
@@ -278,7 +275,7 @@ elseif strcmp(wname_str, 'sym2')
         WidthTable = WidthTable + [1:length(Scales)] * Eps;
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
-elseif  strcmp(wname_str, 'bior1.3')
+    case 'bior1.3'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
         for i = 1:length(Scales)
@@ -297,7 +294,7 @@ elseif  strcmp(wname_str, 'bior1.3')
         WidthTable = WidthTable + [1:length(Scales)] * Eps;
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
-elseif strcmp(wname_str, 'bior1.5')
+    case 'bior1.5'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
         for i = 1:length(Scales)
@@ -316,11 +313,13 @@ elseif strcmp(wname_str, 'bior1.5')
         WidthTable = WidthTable + [1:length(Scales)] * Eps;
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
+        
+        
         
         % Custom data-driven wavelets added by JJC, November 2020
         % See: https://github.com/jeremi-chabros/CWT
         
-elseif contains(wname_str, 'mea')
+    case 'mea'
         Scales = 2:ScaleMax;
         c = cwt(Signal,Scales,wname);
         for i = 3:length(Scales)
@@ -340,7 +339,7 @@ elseif contains(wname_str, 'mea')
         %look-up table
         Scale = round(interp1(WidthTable,Scales,Width,'linear'));
         
-else
+    otherwise
         error('unknown wavelet family')
 end
 

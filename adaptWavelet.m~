@@ -54,22 +54,15 @@ if newWaveletSqN == 1.0000
     % time - currently overwriting as there is no reason to retrieve the
     % wavelet
     
-    wavelet_save_name = strcat(['mother', wavelet_name, '.mat']);
-    
-    save(wavelet_save_name, 'X', 'Y');
+    save('mother.mat', 'X', 'Y');
     % wavemngr('del', 'meaCustom');
-    custom_family_name = strcat(wavelet_name, 'Custom');
-    try 
-        wavemngr('del', custom_family_name);
-        del_wavelet_success = 1;
-    catch
-        del_wavelet_success = 0;
-    end 
+    custom_family_name = strcat(wavelet_name, 'Custom')
+    wavemngr('del', strcat(wavelet_name, 'Custom'));
     
     % All wavelets cunstructed with wavemngr are type 4 wavelets
     % without a scaling function
     % wavemngr('add', 'meaCustom', wavelet_name, 4, '', 'mother.mat', [-100 100]);
-    wavemngr('add', custom_family_name, wavelet_name, 4, '', wavelet_save_name, [-100 100]);
+    wavemngr('add', strcat(wavelet_name, 'Custom'), wavelet_name, 4, '', 'mother.mat', [-100 100]);
     wname = wavelet_name;
 else
     disp('ERROR: Not a proper wavelet');
